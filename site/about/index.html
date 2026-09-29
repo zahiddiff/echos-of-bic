@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Echoes of BIC</title>
+<meta name="description" content="A realistic horror job simulator. Work the night front desk at a university help desk, check IDs and paperwork, and decide who gets through. Play the demo free in your browser.">
+<meta property="og:title" content="Echoes of BIC">
+<meta property="og:description" content="A realistic horror job simulator. Most people are exactly who they say they are.">
+<meta property="og:image" content="https://zahiddiff.github.io/echos-of-bic/about/media/social-card.jpg">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0b0c0f;
+  --panel: #13151a;
+  --edge: #262830;
+  --ink: #edebe0;
+  --muted: #9a9ea6;
+  --faint: #62666e;
+  --accent: #dbbd78;
+  --danger: #d6705f;
+  --paper: #e8e5da;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.6 Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); }
+img, video { display: block; max-width: 100%; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+
+/* Hero */
+.hero { position: relative; min-height: 88vh; display: grid; align-items: end; overflow: hidden; }
+.hero img.bg { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 75% 40%; }
+.hero::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(11,12,15,.1) 0%, rgba(11,12,15,.25) 60%, var(--bg) 100%),
+              linear-gradient(90deg, rgba(11,12,15,.95) 0%, rgba(11,12,15,.75) 30%, rgba(11,12,15,0) 58%);
+}
+.hero .wrap { position: relative; z-index: 1; padding-bottom: 72px; max-width: none; margin: 0; padding-left: max(16px, 6vw); }
+.hero .wrap > * { max-width: 520px; }
+.hero .wrap > h1 { max-width: none; white-space: nowrap; }
+.kicker { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--faint); margin: 0 0 12px; }
+h1 {
+  font-family: "Source Serif 4", Georgia, serif; font-weight: 600;
+  font-size: clamp(44px, 8vw, 92px); line-height: 1; letter-spacing: .02em;
+  color: var(--accent); margin: 0 0 14px;
+}
+.tagline { font-size: clamp(18px, 2.4vw, 22px); color: var(--ink); max-width: 560px; margin: 0 0 28px; }
+.buttons { display: flex; flex-wrap: wrap; gap: 12px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 13px 22px; border-radius: 3px; font-weight: 600; font-size: 15px;
+  text-decoration: none; border: 1px solid var(--edge); color: var(--ink); background: rgba(19,21,26,.8);
+}
+.btn.primary { background: var(--accent); color: #141414; border-color: var(--accent); }
+.btn:hover { filter: brightness(1.1); }
+.wip {
+  display: inline-block; margin-top: 22px; font-size: 13px; color: var(--muted);
+  border-left: 2px solid var(--accent); padding-left: 10px;
+}
+
+section { padding: 72px 0; border-top: 1px solid #16181d; }
+h2 { font-family: "Source Serif 4", Georgia, serif; font-weight: 600; font-size: 30px; margin: 0 0 20px; }
+.lead { font-size: 18px; color: var(--ink); max-width: 720px; }
+p { color: var(--muted); max-width: 720px; }
+
+/* Trailer */
+.trailer { border: 1px solid var(--edge); background: #000; border-radius: 4px; overflow: hidden; }
+.trailer video { width: 100%; aspect-ratio: 16 / 9; }
+
+/* Features */
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 32px; }
+.feature { background: var(--panel); border: 1px solid var(--edge); padding: 22px; border-radius: 4px; }
+.feature h3 { margin: 0 0 8px; font-size: 16px; color: var(--ink); }
+.feature p { margin: 0; font-size: 14.5px; }
+
+/* Screens */
+.shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.shots a { display: block; border: 1px solid var(--edge); border-radius: 3px; overflow: hidden; }
+.shots img { aspect-ratio: 16 / 9; object-fit: cover; width: 100%; transition: transform .3s; }
+.shots a:hover img { transform: scale(1.02); }
+.caption { font-size: 13px; color: var(--faint); margin-top: 10px; }
+
+/* Facts + press */
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+dl { display: grid; grid-template-columns: 140px 1fr; gap: 10px 16px; margin: 0; }
+dt { color: var(--faint); font-size: 14px; }
+dd { margin: 0; font-size: 14.5px; }
+.press { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.press a {
+  display: block; padding: 12px 14px; background: var(--panel); border: 1px solid var(--edge);
+  border-radius: 3px; color: var(--ink); text-decoration: none; font-size: 14px;
+}
+.press a small { display: block; color: var(--faint); font-size: 12px; }
+.press a:hover { border-color: var(--accent); }
+
+footer { padding: 40px 0 60px; color: var(--faint); font-size: 13px; border-top: 1px solid #16181d; }
+footer .wrap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+
+@media (max-width: 480px) {
+  .hero .wrap > h1 { white-space: normal; }
+}
+@media (max-width: 760px) {
+  .two { grid-template-columns: 1fr; }
+  dl { grid-template-columns: 110px 1fr; }
+  .hero { min-height: 78vh; }
+  section { padding: 52px 0; }
+}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <img class="bg" src="media/key-art-clean.jpg" alt="A visitor waiting at the front desk under fluorescent light">
+  <div class="wrap">
+    <p class="kicker">A realistic horror job simulator</p>
+    <h1>Echoes of BIC</h1>
+    <p class="tagline">You work the night front desk at a university's international student help desk. Most people are exactly who they say they are.</p>
+    <div class="buttons">
+      <a class="btn primary" href="../demo/">▶ Play the demo free</a>
+      <a class="btn" href="#trailer">Watch the trailer</a>
+      <a class="btn" href="https://github.com/zahiddiff/echos-of-bic">GitHub</a>
+    </div>
+    <span class="wip">In development. The demo runs in your browser: training plus the first two nights.</span>
+  </div>
+</header>
+
+<main>
+  <section id="trailer">
+    <div class="wrap">
+      <div class="trailer">
+        <video controls preload="metadata" playsinline poster="media/key-art-clean.jpg">
+          <source src="media/trailer.mp4" type="video/mp4">
+        </video>
+      </div>
+    </div>
+  </section>
+
+  <section id="about">
+    <div class="wrap">
+      <h2>The job</h2>
+      <p class="lead">Visitors come in with ordinary requests: a class schedule, a transcript, visa paperwork, a parcel from the mailroom. You check their form against their ID, look closely at their face, ask a question if something feels off, and make the call.</p>
+      <p>A few of them are not who they say they are. Nothing tells you when you get one wrong. You find out later, when something happens somewhere else in the building and the Dean comes down to your desk.</p>
+      <p>No monsters, no jump scares, nothing supernatural. The dread comes from people, paperwork, and an institution that is slow to take its own warnings seriously.</p>
+
+      <div class="features">
+        <div class="feature">
+          <h3>A real job first</h3>
+          <p>Twenty kinds of request, a six-rule rulebook taped to the desk, a stamp, a rejection slip and a security radio. No menus.</p>
+        </div>
+        <div class="feature">
+          <h3>Faces you have to read</h3>
+          <p>Every ID photo is generated, and so is the person holding it. When they don't match, the difference is small on purpose.</p>
+        </div>
+        <div class="feature">
+          <h3>Consequences that arrive late</h3>
+          <p>Let the wrong person through and nothing happens. Not yet. The cost turns up a few visitors later, somewhere else.</p>
+        </div>
+        <div class="feature">
+          <h3>Eight nights, five strikes</h3>
+          <p>Strikes carry across the whole run. Three endings, depending on what got past you.</p>
+        </div>
+        <div class="feature">
+          <h3>Watch how they answer</h3>
+          <p>A glance at the exit, an answer that comes too fast, a silence that runs long. Innocent people get nervous too.</p>
+        </div>
+        <div class="feature">
+          <h3>Plays in your browser</h3>
+          <p>No download, no account. The demo and the latest development build both run on this site.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="screens">
+    <div class="wrap">
+      <h2>Screenshots</h2>
+      <div class="shots">
+        <a href="media/shot-magnifier.jpg"><img src="media/shot-magnifier.jpg" alt="The desk: request form, ID card, the magnifier over the ID photo" loading="lazy"></a>
+        <a href="media/shot-counter.jpg"><img src="media/shot-counter.jpg" alt="A visitor at the counter" loading="lazy"></a>
+        <a href="media/shot-dean.jpg"><img src="media/shot-dean.jpg" alt="The Dean at the desk after an incident" loading="lazy"></a>
+        <a href="media/shot-main-floor.jpg"><img src="media/shot-main-floor.jpg" alt="The main floor and the other desk" loading="lazy"></a>
+        <a href="media/shot-shift-report.jpg"><img src="media/shot-shift-report.jpg" alt="The shift log after clocking out" loading="lazy"></a>
+        <a href="media/shot-print-room.jpg"><img src="media/shot-print-room.jpg" alt="The print room" loading="lazy"></a>
+      </div>
+      <p class="caption">Work-in-progress build. Rooms are gray-boxed and characters are placeholders.</p>
+    </div>
+  </section>
+
+  <section id="press">
+    <div class="wrap two">
+      <div>
+        <h2>Fact sheet</h2>
+        <dl>
+          <dt>Developer</dt><dd>Md Zahidul Haque, Utopia Studio</dd>
+          <dt>Genre</dt><dd>Realistic horror, job simulator</dd>
+          <dt>Status</dt><dd>In development. Free browser demo available.</dd>
+          <dt>Platform</dt><dd>Web browser (desktop, keyboard and mouse)</dd>
+          <dt>Engine</dt><dd>Godot 4.7</dd>
+          <dt>Length</dt><dd>Demo: three shifts. Full game: eight.</dd>
+          <dt>Source</dt><dd><a href="https://github.com/zahiddiff/echos-of-bic">github.com/zahiddiff/echos-of-bic</a></dd>
+        </dl>
+      </div>
+      <div>
+        <h2>Press kit</h2>
+        <div class="press">
+          <a href="media/trailer.mp4" download>Trailer<small>1080p MP4, 63 s</small></a>
+          <a href="media/key-art.jpg" download>Key art<small>1920 × 1080</small></a>
+          <a href="media/capsules/header_capsule.png" download>Header capsule<small>920 × 430</small></a>
+          <a href="media/capsules/main_capsule.png" download>Main capsule<small>1232 × 706</small></a>
+          <a href="media/capsules/small_capsule.png" download>Small capsule<small>462 × 174</small></a>
+          <a href="media/capsules/vertical_capsule.png" download>Vertical capsule<small>748 × 896</small></a>
+          <a href="media/capsules/library_capsule.png" download>Library capsule<small>600 × 900</small></a>
+          <a href="media/capsules/library_hero.png" download>Library hero<small>3840 × 1240</small></a>
+          <a href="media/capsules/itch_cover.png" download>itch.io cover<small>630 × 500</small></a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Md Zahidul Haque · Utopia Studio</span>
+    <span><a href="../demo/">Demo</a> · <a href="../">Development build</a> · <a href="https://github.com/zahiddiff/echos-of-bic">GitHub</a> · <a href="https://zahiddiff.github.io/">zahiddiff.github.io</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

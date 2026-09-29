@@ -21,6 +21,7 @@ func _run() -> void:
 	print("Shift end test")
 	await _test_report_and_next_shift()
 	await _test_final_shift_ends_run()
+	await _test_demo_stops_after_three()
 	await _test_portraits_render_on_demand()
 
 	print("")
@@ -96,6 +97,35 @@ func _test_final_shift_ends_run() -> void:
 	_expect(building.report.mode == "ending", "and shows the ending (%s)" % GameState.ending_name(GameState.ending))
 	building.queue_free()
 	await get_tree().process_frame
+	GameState.reset()
+
+func _test_demo_stops_after_three() -> void:
+	print("
+ The demo")
+	GameState.reset()
+	GameState.set_player_name("Zahidul")
+	GameState.demo = true
+	var building := await _building(2)
+	await _work_the_queue(building)
+	_expect(await _wait_for_report(building, 40.0), "shift 2 of the demo gets its report")
+	_expect(not bool(building.report.summary["run_over"]) or GameState.run_over, "and carries on to shift 3")
+	building.queue_free()
+	await get_tree().process_frame
+
+	GameState.reset()
+	GameState.set_player_name("Zahidul")
+	building = await _building(GameState.DEMO_LAST_SHIFT)
+	await _work_the_queue(building)
+	_expect(await _wait_for_report(building, 60.0), "the demo's last shift gets its report")
+	building._on_report_continue()
+	if GameState.run_over:
+		_expect(building.report.mode == "ending", "fired in the demo still gets the real ending")
+	else:
+		_expect(building.report.mode == "demo_end", "then the end-of-demo screen, not shift 4")
+		_expect(GameState.demo_finished(), "and the run knows the demo is done")
+	building.queue_free()
+	await get_tree().process_frame
+	GameState.demo = false
 	GameState.reset()
 
 func _test_portraits_render_on_demand() -> void:

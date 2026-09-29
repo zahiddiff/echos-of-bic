@@ -6,3 +6,6 @@
 /build/
 /export/
 *.tmp
+
+# Local display overrides for capture tools
+override.cfg

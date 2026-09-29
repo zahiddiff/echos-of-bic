@@ -55,10 +55,13 @@ jobs:
 
       - name: Export
         run: |
-          mkdir -p build/web
+          mkdir -p build/web/demo
           ~/godot/godot --headless --path . --export-release "Web" build/web/index.html
+          ~/godot/godot --headless --path . --export-release "Web Demo" build/web/demo/index.html
           test -s build/web/index.html
-          ls -la build/web
+          test -s build/web/demo/index.html
+          cp -r site/. build/web/
+          ls -la build/web build/web/demo
 
       - uses: actions/upload-pages-artifact@v3
         with:

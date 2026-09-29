@@ -4,6 +4,9 @@ class_name ShiftReport
 ## End-of-shift log, then the ending when the run is over.
 
 signal continue_requested()
+
+const FULL_GAME_URL := "https://zahiddiff.github.io/echos-of-bic/"
+const ABOUT_URL := "https://zahiddiff.github.io/echos-of-bic/about/"
 signal new_run_requested()
 
 var summary: Dictionary = {}
@@ -193,6 +196,39 @@ func _field(placeholder: String) -> LineEdit:
 	field.add_theme_font_size_override("font_size", 14)
 	_body.add_child(field)
 	return field
+
+## Where the demo stops: what the run looked like, and where the rest of it is.
+func show_demo_end(strikes_left: int, incidents: int) -> void:
+	is_showing = true
+	mode = "demo_end"
+	_clear()
+	_body.add_theme_constant_override("separation", 10)
+	_body.add_child(UiKit.label("END OF THE DEMO", 12, UiKit.FAINT))
+	_body.add_child(UiKit.label("Three nights at the desk", 30))
+	_body.add_child(UiKit.label("The full game runs eight. The queue gets longer, the building gets quieter, and it remembers what you let through.", 15, UiKit.MUTED))
+	_body.add_child(UiKit.rule())
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 40)
+	_row(grid, "Strikes left", "%d of %d" % [strikes_left, GameState.MAX_STRIKES])
+	_row(grid, "Incidents on your watch", str(incidents))
+	_body.add_child(grid)
+	_body.add_child(UiKit.rule())
+	_body.add_child(_spacer(4))
+	var full := UiKit.button("Keep playing the development build")
+	full.pressed.connect(func() -> void: OS.shell_open(FULL_GAME_URL))
+	_body.add_child(full)
+	var follow := UiKit.button("About the game", false)
+	follow.pressed.connect(func() -> void: OS.shell_open(ABOUT_URL))
+	_body.add_child(follow)
+	var again := UiKit.button("Start the demo again", false)
+	again.pressed.connect(func() -> void: new_run_requested.emit())
+	_body.add_child(again)
+	if PlaytestLog.questionnaire:
+		var save_button := UiKit.button("Save playtest log", false)
+		save_button.pressed.connect(func() -> void: save_button.text = "Saved: %s" % PlaytestLog.export_log())
+		_body.add_child(save_button)
+	_reveal(full)
 
 func _reveal(focus: Control) -> void:
 	visible = true

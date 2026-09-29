@@ -170,7 +170,7 @@ func _start_shift() -> void:
 	runner.shift_started.connect(func(number: int, count: int) -> void:
 		PlaytestLog.begin_shift(number, ShiftSchedule.is_onboarding(number), count, GameState.strikes_remaining()))
 	runner.start(shift, queue_seed)
-	status_bar.set_shift(shift, runner.is_onboarding)
+	status_bar.set_shift(shift, runner.is_onboarding, GameState.demo)
 	records.load_records(_records_for_queue())
 
 	print("[BIC] shift %d%s — %d visitors, %d threats, %d strikes left"
@@ -411,7 +411,7 @@ func shift_summary() -> Dictionary:
 		"flagged": tally["flagged"],
 		"strikes_left": GameState.strikes_remaining(),
 		"clock_out": clock_text(),
-		"run_over": GameState.run_over or GameState.is_final_shift(),
+		"run_over": GameState.run_over or GameState.is_final_shift() 			or (GameState.demo and shift >= GameState.DEMO_LAST_SHIFT),
 	}
 
 func _on_report_continue() -> void:
@@ -421,6 +421,10 @@ func _on_report_continue() -> void:
 	if GameState.run_over:
 		PlaytestLog.end_run(GameState.ending_name(GameState.ending))
 		report.show_ending(GameState.ending, Dean.ending_lines(GameState.ending))
+		return
+	if GameState.demo_finished():
+		PlaytestLog.end_run("Demo complete")
+		report.show_demo_end(GameState.strikes_remaining(), GameState.incident_count())
 		return
 	# The next night, same building.
 	shift = 0

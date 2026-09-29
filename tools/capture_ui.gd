@@ -12,7 +12,6 @@ func _ready() -> void:
 	_run()
 
 func _run() -> void:
-	get_window().size = Vector2i(1280, 720)
 	GameState.reset()
 	GameState.set_player_name("Zahidul")
 	var building: BICBuilding = load("res://scenes/building/bic_building.tscn").instantiate()

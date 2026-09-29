@@ -19,7 +19,24 @@ var _grab_offset: Vector2
 @onready var rim: Panel = $Rim
 @onready var handle: Panel = $Handle
 
+## Clip rectangles are square; the glass is round.
+const ROUND_LENS := """
+shader_type canvas_item;
+uniform vec2 centre;
+uniform float radius;
+uniform vec2 rect_size;
+void fragment() {
+	if (distance(UV * rect_size, centre) > radius) {
+		discard;
+	}
+}
+"""
+
 func _ready() -> void:
+	var round_mask := ShaderMaterial.new()
+	round_mask.shader = Shader.new()
+	round_mask.shader.code = ROUND_LENS
+	lens.material = round_mask
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	custom_minimum_size = Vector2(lens_radius * 2.0, lens_radius * 2.0)
 	lens.visible = false
@@ -83,6 +100,11 @@ func _refresh() -> void:
 	lens.size = texture_size * zoom
 	# Centre the magnified image on the point currently under the lens.
 	lens.position = size * 0.5 - local * lens.size
+	var mask := lens.material as ShaderMaterial
+	if mask:
+		mask.set_shader_parameter("centre", size * 0.5 - lens.position)
+		mask.set_shader_parameter("radius", minf(size.x, size.y) * 0.5 - 3.0)
+		mask.set_shader_parameter("rect_size", lens.size)
 
 	# You hold the glass above the paper, never under it.
 	move_to_front()

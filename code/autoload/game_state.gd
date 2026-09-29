@@ -21,6 +21,10 @@ const FALSE_FLAG_WARNING_AT := 3
 ## The True ending asks for no strikes AND precise flagging.
 const TRUE_ENDING_FALSE_FLAG_ALLOWANCE := 2
 
+## The public demo: training plus the first two real shifts. Set by the "demo" export feature or `--demo`.
+const DEMO_LAST_SHIFT := 3
+var demo: bool = false
+
 var player_name: String = ""
 
 var strikes_taken: int = 0
@@ -31,6 +35,13 @@ var false_flags: int = 0
 var incidents: Array[ThreatType.Kind] = []
 var run_over: bool = false
 var ending: Ending = Ending.STANDARD
+
+func _ready() -> void:
+	demo = OS.has_feature("demo") or OS.get_cmdline_user_args().has("--demo")
+
+## True once a demo run has played every shift it has.
+func demo_finished() -> bool:
+	return demo and not run_over and shift > DEMO_LAST_SHIFT
 
 func set_player_name(value: String) -> void:
 	var cleaned := value.strip_edges()

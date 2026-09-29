@@ -52,8 +52,11 @@ func _ready() -> void:
 		_pips.append(pip)
 	set_strikes(GameState.strikes_remaining())
 
-func set_shift(shift: int, training: bool) -> void:
-	_shift_label.text = "SHIFT %d  ·  TRAINING" % shift if training else "SHIFT %d OF %d" % [shift, ShiftSchedule.TOTAL_SHIFTS]
+func set_shift(shift: int, training: bool, demo: bool = false) -> void:
+	var total := GameState.DEMO_LAST_SHIFT if demo else ShiftSchedule.TOTAL_SHIFTS
+	_shift_label.text = "SHIFT %d  ·  TRAINING" % shift if training else "SHIFT %d OF %d" % [shift, total]
+	if demo:
+		_shift_label.text += "  ·  DEMO"
 
 func set_clock(text: String) -> void:
 	_clock_label.text = text

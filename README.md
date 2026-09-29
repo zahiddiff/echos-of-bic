@@ -10,7 +10,7 @@ Check every visitor's ID and paperwork against the rulebook, then approve, rejec
 
 ![The front desk: request form, ID card, the visitor, and the desk rules](docs/images/desk.png)
 
-**[▶ Play in the browser](https://zahiddiff.github.io/echos-of-bic/)** · **[🎮 Controls](#controls)** · **[🗺 Roadmap](#roadmap)** · **[🧪 Help playtest](PLAYTESTING.md)**
+**[▶ Play the demo](https://zahiddiff.github.io/echos-of-bic/demo/)** · **[🎬 Trailer & about](https://zahiddiff.github.io/echos-of-bic/about/)** · **[🛠 Latest dev build](https://zahiddiff.github.io/echos-of-bic/)** · **[🎮 Controls](#controls)** · **[🗺 Roadmap](#roadmap)** · **[🧪 Help playtest](PLAYTESTING.md)**
 
 ![status](https://img.shields.io/badge/status-work%20in%20progress-f0a500)
 ![engine](https://img.shields.io/badge/Godot-4.7-478cbf)
@@ -88,6 +88,7 @@ Every visitor's ID photo is generated from a face (skin, hair, eyes, glasses, fa
 | Real art, voices and recorded sound | 🚧 Placeholders for now |
 | Playtest logging, post-shift questions and a balance report tool | ✅ Working |
 | Tuning the difficulty against real playtests | 🚧 Waiting on testers |
+| Browser demo (training plus two nights), trailer, key art and store capsules | ✅ Working |
 
 ## Controls
 
@@ -128,7 +129,7 @@ tools/         test suites, building generator, balance sim, screenshot tools
 | 10 | Scripted training shift | ✅ |
 | 11–13 | Art and audio pass | 🚧 Systems done, placeholder assets |
 | 14–15 | Playtesting and rebalancing | 🚧 In progress: [help test it](PLAYTESTING.md) |
-| 16 | Public demo and store page | 📋 Planned |
+| 16 | Public demo and store page | ✅ [Demo](https://zahiddiff.github.io/echos-of-bic/demo/), [trailer and store page](https://zahiddiff.github.io/echos-of-bic/about/) ready; no store listing yet |
 
 ## Running locally
 

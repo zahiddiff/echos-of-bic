@@ -17,6 +17,8 @@ func _ready() -> void:
 	GameState.reset()
 	PlaytestLog.start_session()
 	error_label.visible = false
+	if GameState.demo:
+		$Tagline.text = "Demo  ·  the first three nights"
 	name_field.max_length = max_name_length
 	name_field.text = remembered
 	name_field.grab_focus()
