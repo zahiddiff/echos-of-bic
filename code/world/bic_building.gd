@@ -56,6 +56,9 @@ var pause_menu: PauseMenu
 var tally := {"approved": 0, "rejected": 0, "flagged": 0}
 var clock_minutes: float = 0.0
 var _end_reason: int = -1
+var collection_points: Array[CollectionPoint] = []
+## A thief using a back-room errand as cover has moved round the counter while the desk was empty.
+var _slipped_away: bool = false
 
 const TITLE_SCENE := "res://scenes/ui/name_entry.tscn"
 ## Game minutes that pass per real second, and per visitor served.
@@ -113,10 +116,57 @@ func _ready() -> void:
 	dialogue.line_started.connect(func(line: DialogueLine) -> void:
 		stage.perform(line, dialogue.reading_speed))
 
+	_build_collection_points()
 	_start_shift()
 
 	if GameState.has_player_name():
 		hud.show_activity("Shift %d — %s" % [shift, GameState.player_name])
+
+## The printer and the mailroom shelf in the print room, where physical tasks are fetched from.
+func _build_collection_points() -> void:
+	var room := get_node_or_null("Props/PrintRoom")
+	if room == null:
+		return
+	var printer := CollectionPoint.new()
+	printer.name = "PrinterTray"
+	printer.kind = "printout"
+	printer.idle_prompt = "Printer"
+	printer.position = Vector3(-3.0, 0.575, BuildingLayout.Z_MAX - 0.7)
+	room.add_child(printer)
+	printer.setup(Vector3(0.98, 1.2, 0.78), Vector3(0.0, 0.59, 0.05), Vector3(0.3, 0.02, 0.4), Color(0.96, 0.96, 0.93))
+	var shelf := CollectionPoint.new()
+	shelf.name = "MailroomShelf"
+	shelf.kind = "parcel"
+	shelf.idle_prompt = "Mailroom shelf"
+	shelf.position = Vector3(BuildingLayout.X_MIN + 0.25, 0.95, BuildingLayout.Z_MAIN_PRINT + 0.9)
+	room.add_child(shelf)
+	shelf.setup(Vector3(0.58, 1.95, 1.48), Vector3(0.05, 0.12, 0.1), Vector3(0.34, 0.24, 0.3), Color(0.55, 0.42, 0.28))
+	for point: CollectionPoint in [printer, shelf]:
+		point.collected.connect(_on_item_collected)
+		collection_points.append(point)
+
+func _refresh_collection() -> void:
+	var request := current_request()
+	for point in collection_points:
+		point.wait_for(request)
+
+func _on_item_collected(request: VisitorRequest) -> void:
+	hud.show_activity("You have the %s. Take it back to the desk." % request.collected_label().to_lower())
+	PlaytestLog.note("collected")
+	PlaytestLog.event("collected", {"task": request.task_id})
+	if _slipped_away:
+		# They hear you coming back.
+		get_tree().create_timer(2.0).timeout.connect(func() -> void:
+			if _slipped_away and stage.at_counter_request == request:
+				_slipped_away = false
+				stage.step_back_to_counter())
+
+## Stamp stays locked until whatever the task needs has been fetched.
+func _update_stamp_lock(request: VisitorRequest) -> void:
+	var waiting := request != null and request.needs_collection() and not request.collected
+	stamp.locked = waiting
+	if waiting:
+		stamp.locked_prompt_text = "Approve: fetch the %s first" % request.collected_label().to_lower()
 
 func _build_interface() -> void:
 	status_bar = StatusBar.new()
@@ -231,6 +281,11 @@ func _on_desk_seated(_player: Node) -> void:
 	stamp.load_document(_ticket)
 	slip.load_document(_ticket)
 	radio.load_document(_ticket)
+	_update_stamp_lock(request)
+	if _slipped_away:
+		# Back before they expected you.
+		_slipped_away = false
+		stage.step_back_to_counter()
 
 	viewer.show_request(request)
 	viewer.show_rulebook(rulebook)
@@ -252,13 +307,34 @@ func _on_desk_stood_up(_player: Node) -> void:
 	radio.abort()
 	_clear_ticket()
 	# Standing up does NOT skip anyone — they are still at the counter when you get back.
+	_maybe_slip_away(current_request())
+
+## A thief sent to wait while you fetch something uses the empty desk.
+func _maybe_slip_away(request: VisitorRequest) -> void:
+	if request == null or not visitors_enabled or not request.is_threat \
+			or request.threat_kind != ThreatType.Kind.THIEF \
+			or not request.needs_collection() or request.collected:
+		return
+	await get_tree().create_timer(4.0).timeout
+	if not is_inside_tree() or desk.is_seated or request.collected or current_request() != request:
+		return
+	_slipped_away = true
+	stage.slip_behind_counter()
+	PlaytestLog.event("thief_behind_counter")
 
 func _on_viewer_closed() -> void:
 	pass
 
 func _on_desk_action_clicked(action: Node) -> void:
-	if desk.is_seated and action.has_method("interact"):
-		action.interact(player)
+	if not desk.is_seated or not action.has_method("interact"):
+		return
+	if action == stamp and stamp.locked:
+		var request := current_request()
+		if request:
+			viewer.show_hint("The %s is still in the print room. Fetch it before you approve." %
+				request.collected_label().to_lower())
+		return
+	action.interact(player)
 
 func _on_desk_action_hovered(action: Node, inside: bool) -> void:
 	if not desk.is_seated:
@@ -319,6 +395,9 @@ func _clear_ticket() -> void:
 # --- The night ----------------------------------------------------------------
 
 func _on_visitor_ready(request: VisitorRequest) -> void:
+	_slipped_away = false
+	_refresh_collection()
+	_update_stamp_lock(request)
 	if visitors_enabled and stage:
 		stage.call_forward(request, runner.peek(1))
 	if not desk.is_seated:

@@ -105,6 +105,30 @@ func escort_out() -> void:
 			_walk_out(figure)
 			get_tree().create_timer(0.6).timeout.connect(func() -> void: _walk_out(guard))))
 
+## Round the open end of the counter, onto the staff side.
+func staff_side_point() -> Vector3:
+	return Vector3(L.COUNTER_X0 - 0.45, 0.0, L.counter_back_z() + 0.15)
+
+## With the desk empty, the visitor at the counter drifts round to the staff side.
+func slip_behind_counter() -> void:
+	var figure := at_counter
+	if figure == null or not is_instance_valid(figure):
+		return
+	var edge := Vector3(L.COUNTER_X0 - 0.45, 0.0, L.counter_front_z() - 0.3)
+	figure.walk(PackedVector3Array([edge, staff_side_point()]), func() -> void:
+		figure.face(Vector3(L.COUNTER_X1, 1.0, L.COUNTER_Z)))
+
+## And back to where they should be, as if they never moved.
+func step_back_to_counter() -> void:
+	var figure := at_counter
+	if figure == null or not is_instance_valid(figure):
+		return
+	var edge := Vector3(L.COUNTER_X0 - 0.45, 0.0, L.counter_front_z() - 0.3)
+	figure.walk(PackedVector3Array([edge, counter_point()]), func() -> void: figure.face(player_point))
+
+func is_behind_counter(figure: VisitorFigure) -> bool:
+	return figure != null and figure.global_position.z > L.counter_front_z()
+
 ## Put someone at the counter with no walk and no door — nobody saw them come in, and the chime never played.
 func appear_without_entering(request: VisitorRequest) -> VisitorFigure:
 	var figure := VisitorFigure.for_request(request)

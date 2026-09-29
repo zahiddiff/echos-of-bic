@@ -53,6 +53,13 @@ var id_face: PortraitFactory.FaceTraits
 ## Whether the ID photo is actually this visitor (rule 4).
 @export var photo_matches: bool = true
 
+@export_group("Collection")
+## Physical tasks only. Blank means it came back exactly as asked for; anything else is what is actually printed on it.
+@export var item_name: String = ""
+@export var item_label: String = ""
+## Whether the player has fetched it from the back room yet.
+var collected: bool = false
+
 @export_group("Dialogue")
 ## What they say at the desk, plus the one or two follow-ups worth asking.
 @export var dialogue: VisitorDialogue
@@ -63,6 +70,22 @@ var id_face: PortraitFactory.FaceTraits
 @export var is_threat: bool = false
 ## Which threat this is, when `is_threat`.
 @export var threat_kind: ThreatType.Kind = ThreatType.Kind.NONE
+
+## Physical tasks send the player to the back room before anything can be handed over.
+func needs_collection() -> bool:
+	return not TaskPool.collection_kind(task_id).is_empty()
+
+func collected_name() -> String:
+	return item_name if not item_name.is_empty() else form_name
+
+func collected_label() -> String:
+	return item_label if not item_label.is_empty() else TaskPool.collection_label(task_id)
+
+## What came back from the back room is what was asked for, under the right name.
+func collection_matches() -> bool:
+	if not needs_collection():
+		return true
+	return collected_name() == form_name and collected_label() == TaskPool.collection_label(task_id)
 
 func is_clean() -> bool:
 	return wrongness == Wrongness.NONE and not is_threat

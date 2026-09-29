@@ -21,7 +21,7 @@ const FLAG := 2
 static func right_call(request: VisitorRequest, rulebook: Rulebook) -> RightCall:
 	if request.is_threat:
 		return RightCall.FLAG
-	if not rulebook.passes(request):
+	if not rulebook.passes(request) or not request.collection_matches():
 		return RightCall.REJECT
 	return RightCall.APPROVE
 
@@ -49,3 +49,7 @@ static func verdict_name(verdict: Verdict) -> String:
 ## Repetition and Physical wrongness are not visible on the rules sheet, so a player who rejects on those grounds is reading the room rather than the rulebook.
 static func was_catchable_by_rulebook(request: VisitorRequest, rulebook: Rulebook) -> bool:
 	return not rulebook.passes(request)
+
+## Anything a careful clerk could have caught at the desk: the rulebook, or what came back from the back room.
+static func was_catchable_at_desk(request: VisitorRequest, rulebook: Rulebook) -> bool:
+	return not rulebook.passes(request) or not request.collection_matches()

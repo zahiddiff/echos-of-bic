@@ -32,21 +32,33 @@ var rulebook_sheet: DraggablePaper
 var _rules_box: VBoxContainer
 var _mark: Label
 
+## What was fetched from the back room, to compare against the form.
+var item_paper: DraggablePaper
+var _item_kind: Label
+var _item_title: Label
+var _item_name: Label
+var _item_number: Label
+var _collect_value: Label
+var _collect_row: Control
+
 func _ready() -> void:
 	_home_positions[request_form] = request_form.position
 	_home_positions[id_card] = id_card.position
 	_home_positions[magnifier] = magnifier.position
 	# Out of the way of the ID card, so both photos can be compared side by side.
-	magnifier.position = Vector2(640, 150)
+	magnifier.position = Vector2(650, 205)
 	_home_positions[magnifier] = magnifier.position
 	_build_rulebook_sheet()
 	_home_positions[rulebook_sheet] = rulebook_sheet.position
+	_build_item_paper()
+	_home_positions[item_paper] = item_paper.position
+	_build_collect_row()
 	hint_label.text = DEFAULT_HINT
 
 	_audio = AudioStreamPlayer.new()
 	_audio.name = "PaperAudio"
 	add_child(_audio)
-	for paper: DraggablePaper in [request_form, id_card, rulebook_sheet]:
+	for paper: DraggablePaper in [request_form, id_card, rulebook_sheet, item_paper]:
 		paper.picked_up.connect(func(_p: DraggablePaper) -> void: _play(pickup_sound))
 		paper.dropped.connect(func(_p: DraggablePaper) -> void: _play(drop_sound))
 
@@ -88,7 +100,28 @@ func show_request(new_request: VisitorRequest) -> void:
 	visitor_photo.texture = request.visitor_portrait
 
 	_mark.visible = false
+	show_collection(request)
 	reset_layout()
+
+## Physical tasks: waiting in the back room, or fetched and on the desk.
+func show_collection(req: VisitorRequest) -> void:
+	var needed := req != null and req.needs_collection()
+	_collect_row.visible = needed
+	item_paper.visible = needed and req.collected
+	if not needed:
+		return
+	var parcel := TaskPool.collection_kind(req.task_id) == "parcel"
+	if req.collected:
+		_collect_value.text = "Collected. Check it against this form."
+		_collect_value.modulate = Color.WHITE
+	else:
+		_collect_value.text = "%s. Waiting on the %s in the print room." % [
+			TaskPool.collection_label(req.task_id), "shelf" if parcel else "printer"]
+		_collect_value.modulate = Color(0.62, 0.34, 0.2)
+	_item_kind.text = "MAILROOM SHELF" if parcel else "PRINT ROOM"
+	_item_title.text = req.collected_label()
+	_item_name.text = req.collected_name()
+	_item_number.text = req.id_number
 
 ## What the rules are tonight. During training only what Rahat has covered so far.
 func show_rulebook(book: Rulebook) -> void:
@@ -196,6 +229,58 @@ func _build_rulebook_sheet() -> void:
 	layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	request_form.add_child(layer)
 	layer.add_child(_mark)
+
+func _build_item_paper() -> void:
+	item_paper = DraggablePaper.new()
+	item_paper.name = "Collected"
+	item_paper.lift_tilt = 1.2
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.97, 0.97, 0.95)
+	style.border_color = Color(0.7, 0.7, 0.68)
+	style.set_border_width_all(1)
+	style.shadow_color = Color(0, 0, 0, 0.45)
+	style.shadow_size = 10
+	style.shadow_offset = Vector2(3, 5)
+	style.set_content_margin_all(14)
+	item_paper.add_theme_stylebox_override("panel", style)
+	item_paper.custom_minimum_size = Vector2(300, 0)
+	item_paper.position = Vector2(572, 28)
+	item_paper.rotation_degrees = 1.2
+	item_paper.visible = false
+	surface.add_child(item_paper)
+	surface.move_child(item_paper, magnifier.get_index())
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 3)
+	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	item_paper.add_child(column)
+	_item_kind = _paper_label("", 10, INK_SOFT)
+	column.add_child(_item_kind)
+	_item_title = _paper_label("", 18, INK_DARK)
+	column.add_child(_item_title)
+	column.add_child(_paper_label("ISSUED TO", 10, INK_SOFT))
+	_item_name = _paper_label("", 16, INK_DARK)
+	column.add_child(_item_name)
+	_item_number = _paper_label("", 14, INK_DARK)
+	column.add_child(_item_number)
+
+func _build_collect_row() -> void:
+	var rows: VBoxContainer = $Surface/RequestForm/Sheet/Rows
+	var row := VBoxContainer.new()
+	row.add_theme_constant_override("separation", 2)
+	var key := Label.new()
+	key.text = "FROM THE BACK ROOM"
+	key.add_theme_font_size_override("font_size", 12)
+	key.add_theme_color_override("font_color", INK_SOFT)
+	row.add_child(key)
+	_collect_value = Label.new()
+	_collect_value.add_theme_font_size_override("font_size", 15)
+	_collect_value.add_theme_color_override("font_color", INK_DARK)
+	_collect_value.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_collect_value.custom_minimum_size = Vector2(360, 0)
+	row.add_child(_collect_value)
+	rows.add_child(row)
+	_collect_row = row
+	row.visible = false
 
 func _paper_label(text: String, size: int, colour: Color) -> Label:
 	var l := Label.new()

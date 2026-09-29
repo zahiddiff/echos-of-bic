@@ -20,7 +20,7 @@ for t in validate_setup smoke_test rulebook_test queue_test; do
 	run --script "res://tools/$t.gd"
 done
 for t in building_test flow_test desk_test dialogue_test consequence_test onboarding_test \
-		environment_test character_test shift_end_test playtest_test balance_sim; do
+		environment_test character_test shift_end_test playtest_test collection_test balance_sim; do
 	run "res://tools/$t.tscn"
 done
 exit $fail

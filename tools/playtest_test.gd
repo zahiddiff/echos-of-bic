@@ -66,7 +66,7 @@ func _test_building_fills_the_log() -> void:
 			decision = BICBuilding.Decision.FLAG
 		elif request.is_threat:
 			missed_one = true
-		elif not book.passes(request):
+		elif DecisionJudge.was_catchable_at_desk(request, book):
 			decision = BICBuilding.Decision.REJECT
 		decisions.append(["APPROVE", "REJECT", "FLAG"][decision])
 		building._resolve(building._ticket, decision, "")
@@ -153,7 +153,7 @@ func _bot_sessions(catch_rate: float, false_flag_rate: float, runs: int, seed_va
 					decision = DecisionJudge.FLAG if rng.randf() < catch_rate else DecisionJudge.APPROVE
 				elif rng.randf() < false_flag_rate:
 					decision = DecisionJudge.FLAG
-				elif not book.passes(request):
+				elif DecisionJudge.was_catchable_at_desk(request, book):
 					decision = DecisionJudge.REJECT
 				PlaytestLog.visitor_shown(request, runner.index)
 				if request.is_threat and rng.randf() < 0.5:

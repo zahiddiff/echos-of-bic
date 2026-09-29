@@ -138,10 +138,20 @@ func _test_wrongness() -> void:
 		"every Data Wrongness is catchable by the rulebook (%d/40)" % data_caught)
 
 	# Physical wrongness needs a task that actually leaves the desk.
-	var physical := maker.clean_request(TaskPool.by_id("transcript_print"))
-	author.apply(physical, VisitorRequest.Wrongness.PHYSICAL)
-	_expect(not _book.passes(physical),
-		"Physical Wrongness on a print-room task shows up on the returned form")
+	var clean_print := maker.clean_request(TaskPool.by_id("transcript_print"))
+	_expect(clean_print.needs_collection() and clean_print.collection_matches(),
+		"a clean print-room task comes back exactly as asked for")
+	var mismatches := 0
+	for attempt in 20:
+		var physical := maker.clean_request(TaskPool.by_id(["transcript_print", "mail_pickup", "bank_letter"][attempt % 3]))
+		author.apply(physical, VisitorRequest.Wrongness.PHYSICAL)
+		if not physical.collection_matches() and _book.passes(physical) \
+				and DecisionJudge.right_call(physical, _book) == DecisionJudge.RightCall.REJECT:
+			mismatches += 1
+	_expect(mismatches == 20,
+		"Physical Wrongness is what comes back from the back room, not the form, and it should be turned down (%d/20)" % mismatches)
+	var desk_task := maker.clean_request(TaskPool.by_id("schedule_lookup"))
+	_expect(not desk_task.needs_collection() and desk_task.collection_matches(), "desk tasks need nothing fetched")
 
 	# On a desk-only task it has nowhere to happen, so it must not silently leave the visitor clean.
 	var desk_only := maker.clean_request(TaskPool.by_id("room_lookup"))

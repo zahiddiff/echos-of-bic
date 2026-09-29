@@ -86,12 +86,19 @@ func _physical(request: VisitorRequest) -> void:
 		request.wrongness = VisitorRequest.Wrongness.DATA
 		return
 
-	# The prior stamp that was on the form when they handed it over is not on the form that comes back (rule 6).
-	request.requires_prior_stamp = true
-	request.has_prior_stamp = false
+	# What comes back from the printer or the shelf is not quite what was asked for.
+	if rng.randf() < 0.5:
+		request.item_name = NameBank.near_miss(request.form_name, rng)
+	else:
+		var others: Array = []
+		for task_id in TaskPool.COLLECTION:
+			var label := TaskPool.collection_label(task_id)
+			var same_place := TaskPool.collection_kind(task_id) == TaskPool.collection_kind(request.task_id)
+			if same_place and label != TaskPool.collection_label(request.task_id):
+				others.append(label)
+		request.item_label = others[rng.randi() % others.size()]
 
-## Was this request's wrongness one the Rulebook can actually see?
+## Was this request's wrongness one the Rulebook can actually see? Physical shows up by comparing what came back with the form.
 static func is_rulebook_visible(kind: VisitorRequest.Wrongness) -> bool:
 	return kind == VisitorRequest.Wrongness.IDENTITY \
-		or kind == VisitorRequest.Wrongness.DATA \
-		or kind == VisitorRequest.Wrongness.PHYSICAL
+		or kind == VisitorRequest.Wrongness.DATA

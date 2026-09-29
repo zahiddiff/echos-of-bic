@@ -40,6 +40,7 @@ No monsters, no jump scares, nothing supernatural. The dread comes from people, 
 | **Look at the face** | Drag the magnifier over the ID photo and over the person in front of you |
 | **Ask** | One or two follow-up questions; watch how they answer, not just what they say |
 | **Look it up** | A dated records terminal for enrollment and schedules |
+| **Fetch it** | Printouts and parcels wait in the back room; bring them to the desk and check they match the form |
 | **Decide** | Stamp **APPROVED**, fill in a **rejection slip**, or pick up the **radio** and call security |
 
 ```mermaid
@@ -79,6 +80,7 @@ Every visitor's ID photo is generated from a face (skin, hair, eyes, glasses, fa
 | First-person movement, the building with locked doors, name entry | ✅ Working |
 | Desk: document viewer, ID card, magnifier, records terminal, subtitled dialogue with follow-ups | ✅ Working |
 | Stamp, rejection slip and security radio as physical desk objects | ✅ Working |
+| Printing and parcel errands: walk to the print room, bring it back, check it matches, while the desk sits empty | ✅ Working |
 | 20 request types, 6 rulebook rules, 4 kinds of wrong paperwork, generated queues | ✅ Working |
 | Threats hidden in the queue, delayed incidents, the Dean, 5 strikes for the whole run, 3 endings | ✅ Working |
 | Scripted training shift with Rahat, teaching one rule at a time | ✅ Working |

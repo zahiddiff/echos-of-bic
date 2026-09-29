@@ -38,12 +38,12 @@ func _decide(player: Player, request: VisitorRequest, rng: RandomNumberGenerator
 		if rng.randf() < player.threat_catch:
 			return DecisionJudge.FLAG
 		# Missed it — they process the paperwork like anyone else.
-		return DecisionJudge.REJECT if (player.follows_rulebook and not _book.passes(request)) \
+		return DecisionJudge.REJECT if (player.follows_rulebook and DecisionJudge.was_catchable_at_desk(request, _book)) \
 			else DecisionJudge.APPROVE
 
 	if rng.randf() < player.false_flag_rate:
 		return DecisionJudge.FLAG
-	if player.follows_rulebook and not _book.passes(request):
+	if player.follows_rulebook and DecisionJudge.was_catchable_at_desk(request, _book):
 		return DecisionJudge.REJECT
 	return DecisionJudge.APPROVE
 

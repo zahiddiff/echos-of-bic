@@ -43,6 +43,24 @@ class TaskType extends RefCounted:
 		return "%s (%s%s)" % [label, "physical" if physical else "desk",
 			", prior stamp" if needs_prior_stamp else ""]
 
+## What a physical task sends you to the back room for: [where it is, what it is].
+const COLLECTION := {
+	"id_reissue": ["printout", "Replacement ID card"],
+	"transcript_print": ["printout", "Official transcript"],
+	"enrollment_cert": ["printout", "Certificate of enrollment"],
+	"bank_letter": ["printout", "Bank confirmation letter"],
+	"sim_letter": ["printout", "Phone registration letter"],
+	"mail_pickup": ["parcel", "Parcel"],
+	"dorm_key": ["parcel", "Dorm access card"],
+}
+
+## "printout" (the printer) or "parcel" (the shelf); empty for desk tasks.
+static func collection_kind(task_id: String) -> String:
+	return COLLECTION[task_id][0] if COLLECTION.has(task_id) else ""
+
+static func collection_label(task_id: String) -> String:
+	return COLLECTION[task_id][1] if COLLECTION.has(task_id) else ""
+
 static func all() -> Array[TaskType]:
 	var C := Category
 	var tasks: Array[TaskType] = [

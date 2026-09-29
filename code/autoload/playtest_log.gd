@@ -134,6 +134,8 @@ func note(what: String) -> void:
 			_visitor["magnified"] = true
 		"lookup":
 			_visitor["looked_up"] = true
+		"collected":
+			_visitor["collected"] = true
 
 func decision_made(decision: int) -> void:
 	_pending_decision = decision
