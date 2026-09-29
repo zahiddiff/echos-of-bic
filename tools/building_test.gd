@@ -66,6 +66,7 @@ func _run() -> void:
 	_building = load(BUILDING).instantiate()
 	# People walking through the front doors would open them mid-check. character_test covers the visitors; this test covers the building.
 	_building.visitors_enabled = false
+	_building.decision_pause = 0.0
 	add_child(_building)
 	await _settle()
 

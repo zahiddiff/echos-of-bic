@@ -57,11 +57,16 @@ func _test_construction() -> void:
 	_expect(figure.collision_layer == 2, "on the actors layer, so doors see them")
 
 	# Their colouring comes from the face on their ID.
+	var face := request.visitor_face
+	_expect(face != null, "the request keeps the face behind the photo")
+	_expect(figure.skin.is_equal_approx(face.skin), "skin matches the ID photo")
+	_expect(figure.hair.is_equal_approx(face.hair), "hair matches the ID photo")
+	_expect(figure.hair_style == face.hair_style and figure.glasses == face.glasses,
+		"same haircut and glasses as the photo")
+	_expect(figure.forearm_l is Node3D and figure.forearm_r is Node3D, "has elbows")
 	var sampled := VisitorFigure.colours_from_portrait(request.visitor_portrait)
-	_expect(figure.skin.is_equal_approx(sampled["skin"]), "skin matches the ID photo")
-	_expect(figure.hair.is_equal_approx(sampled["hair"]), "hair matches the ID photo")
-	_expect(figure.skin.get_luminance() > figure.hair.get_luminance(),
-		"and the sample landed on skin, not hair")
+	var skin_error: float = absf(sampled["skin"].get_luminance() - face.skin.get_luminance())
+	_expect(skin_error < 0.2, "sampling the photo lands on skin (off by %.2f)" % skin_error)
 
 	# Same name, same clothes — a visitor is recognisable across a shift.
 	var again := VisitorFigure.for_request(request)

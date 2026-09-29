@@ -976,6 +976,7 @@ hair = Color(0.07, 0.06, 0.06, 1)
 jacket = Color(0.17, 0.21, 0.3, 1)
 trousers = Color(0.2, 0.2, 0.22, 1)
 pose = 1
+facial_hair = 1
 
 [node name="PrintRoom" type="Node3D" parent="Props" unique_id=1385779268]
 

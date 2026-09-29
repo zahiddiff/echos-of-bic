@@ -25,11 +25,41 @@ signal departed()
 	set(value):
 		trousers = value
 		_recolour()
+@export var shirt: Color = Color(0.86, 0.86, 0.84):
+	set(value):
+		shirt = value
+		_recolour()
+@export var eyes: Color = Color(0.24, 0.15, 0.09):
+	set(value):
+		eyes = value
+		_recolour()
 @export var pose: Pose = Pose.STANDING:
 	set(value):
 		pose = value
 		if _built:
 			_apply_pose()
+
+@export_group("Look")
+@export var hair_style: PortraitFactory.Hair = PortraitFactory.Hair.SHORT:
+	set(value):
+		hair_style = value
+		_rebuild()
+@export var facial_hair: PortraitFactory.FacialHair = PortraitFactory.FacialHair.NONE:
+	set(value):
+		facial_hair = value
+		_rebuild()
+@export var glasses: bool = false:
+	set(value):
+		glasses = value
+		_rebuild()
+## Overall size; 1 is about 1.75 m.
+@export_range(0.85, 1.15) var stature: float = 1.0:
+	set(value):
+		stature = value
+		if _rig:
+			_rig.scale = Vector3.ONE * stature
+@export_group("")
+
 ## Walking pace in metres per second.
 @export var walk_speed: float = 1.1
 
@@ -38,6 +68,8 @@ var torso: Node3D
 var head: Node3D
 var arm_l: Node3D
 var arm_r: Node3D
+var forearm_l: Node3D
+var forearm_r: Node3D
 var thigh_l: Node3D
 var thigh_r: Node3D
 var shin_l: Node3D
@@ -49,13 +81,17 @@ var current_tell: int = -1
 
 const HIP_Y := 0.90
 const SEATED_HIP_Y := 0.47
+const ELBOW_REST := -0.18
 
 var _built := false
+var _rig: Node3D
+var _eyes: Array[Node3D] = []
 var _materials: Dictionary = {}
 var _path: PackedVector3Array = PackedVector3Array()
 var _target_yaw := 0.0
 var _walk_phase := 0.0
 var _idle_t := 0.0
+var _next_blink := 2.0
 var _tell_tween: Tween
 var _busy_until := 0.0
 var _then: Callable
@@ -65,6 +101,7 @@ func _ready() -> void:
 	sync_to_physics = false
 	_build()
 	_target_yaw = rotation.y
+	_next_blink = randf_range(1.5, 4.0)
 	collision_layer = 2
 	collision_mask = 0
 
@@ -74,45 +111,68 @@ func _build() -> void:
 	if _built:
 		return
 	_built = true
-	for key in ["skin", "hair", "jacket", "trousers", "dark"]:
+	for key in ["skin", "hair", "jacket", "trousers", "dark", "shirt", "lip", "white", "iris", "frame"]:
 		var mat := StandardMaterial3D.new()
 		mat.roughness = 0.85
 		_materials[key] = mat
+	(_materials["skin"] as StandardMaterial3D).roughness = 0.62
+	(_materials["white"] as StandardMaterial3D).roughness = 0.3
+	(_materials["iris"] as StandardMaterial3D).roughness = 0.25
+	(_materials["hair"] as StandardMaterial3D).roughness = 0.7
 	_recolour()
 
+	_rig = _pivot(self, "Rig", Vector3.ZERO)
+	_rig.scale = Vector3.ONE * stature
+
 	# Legs: thigh pivots at the hip, shin pivots at the knee.
-	thigh_l = _pivot(self, "ThighL", Vector3(-0.1, HIP_Y, 0))
-	thigh_r = _pivot(self, "ThighR", Vector3(0.1, HIP_Y, 0))
+	thigh_l = _pivot(_rig, "ThighL", Vector3(-0.085, HIP_Y, 0))
+	thigh_r = _pivot(_rig, "ThighR", Vector3(0.085, HIP_Y, 0))
 	for thigh in [thigh_l, thigh_r]:
-		_part(thigh, _box(Vector3(0.15, 0.46, 0.17)), Vector3(0, -0.23, 0), "trousers")
+		_part(thigh, _tapered(0.07, 0.058, 0.46), Vector3(0, -0.23, 0), "trousers")
 	shin_l = _pivot(thigh_l, "ShinL", Vector3(0, -0.45, 0))
 	shin_r = _pivot(thigh_r, "ShinR", Vector3(0, -0.45, 0))
 	for shin in [shin_l, shin_r]:
-		_part(shin, _box(Vector3(0.13, 0.42, 0.15)), Vector3(0, -0.21, 0), "trousers")
-		_part(shin, _box(Vector3(0.12, 0.07, 0.25)), Vector3(0, -0.415, -0.04), "dark")
+		_part(shin, _tapered(0.06, 0.05, 0.42), Vector3(0, -0.21, 0), "trousers")
+		var shoe := _part(shin, _capsule(0.052, 0.26), Vector3(0, -0.425, -0.045), "dark")
+		shoe.rotation.x = deg_to_rad(90.0)
+		shoe.scale = Vector3(1.0, 1.0, 0.62)
 
 	# Torso pivots at the hip, so leaning and breathing move everything above.
-	torso = _pivot(self, "Torso", Vector3(0, HIP_Y, 0))
-	var chest := _part(torso, _capsule(0.17, 0.58), Vector3(0, 0.27, 0), "jacket")
-	chest.scale = Vector3(1.22, 1.0, 0.74)
+	torso = _pivot(_rig, "Torso", Vector3(0, HIP_Y, 0))
+	var hips := _part(torso, _tapered(0.16, 0.15, 0.2), Vector3(0, 0.04, 0), "trousers")
+	hips.scale = Vector3(1.0, 1.0, 0.68)
+	var belly := _part(torso, _tapered(0.15, 0.175, 0.30), Vector3(0, 0.22, 0), "jacket")
+	belly.scale = Vector3(1.0, 1.0, 0.68)
+	var chest := _part(torso, _tapered(0.2, 0.175, 0.24), Vector3(0, 0.40, 0), "jacket")
+	chest.scale = Vector3(1.05, 1.0, 0.62)
+	var yoke := _part(torso, _capsule(0.06, 0.42), Vector3(0, 0.50, 0), "jacket")
+	yoke.rotation.z = deg_to_rad(90.0)
+	yoke.scale = Vector3(1.0, 1.0, 0.95)
+	# Shirt showing in the open collar.
+	var collar := _part(torso, _prism(Vector3(0.10, 0.11, 0.012)), Vector3(0, 0.49, -0.112), "shirt")
+	collar.rotation.z = PI
 
-	arm_l = _pivot(torso, "ArmL", Vector3(-0.235, 0.47, 0))
-	arm_r = _pivot(torso, "ArmR", Vector3(0.235, 0.47, 0))
+	arm_l = _pivot(torso, "ArmL", Vector3(-0.225, 0.50, 0))
+	arm_r = _pivot(torso, "ArmR", Vector3(0.225, 0.50, 0))
+	forearm_l = _pivot(arm_l, "ForearmL", Vector3(0, -0.29, 0))
+	forearm_r = _pivot(arm_r, "ForearmR", Vector3(0, -0.29, 0))
 	for arm in [arm_l, arm_r]:
-		_part(arm, _capsule(0.05, 0.58), Vector3(0, -0.27, 0), "jacket")
-		_part(arm, _sphere(0.047), Vector3(0, -0.57, 0), "skin")
+		_part(arm, _sphere(0.058), Vector3(0, -0.015, 0), "jacket")
+		_part(arm, _tapered(0.056, 0.047, 0.30), Vector3(0, -0.145, 0), "jacket")
+	for forearm in [forearm_l, forearm_r]:
+		forearm.rotation.x = ELBOW_REST
+		_part(forearm, _tapered(0.046, 0.038, 0.26), Vector3(0, -0.13, 0), "jacket")
+		_part(forearm, _cylinder(0.034, 0.03), Vector3(0, -0.27, 0), "skin")
+		var hand := _part(forearm, _sphere(0.045), Vector3(0, -0.32, -0.005), "skin")
+		hand.scale = Vector3(0.62, 1.25, 1.0)
+		var thumb := _part(forearm, _capsule(0.013, 0.06), Vector3(0, -0.305, -0.03), "skin")
+		thumb.rotation.x = deg_to_rad(30.0)
 
-	_part(torso, _cylinder(0.05, 0.10), Vector3(0, 0.55, 0), "skin")
+	_part(torso, _tapered(0.045, 0.05, 0.1), Vector3(0, 0.565, -0.005), "skin")
 
-	# The head pivots at the top of the neck.
-	head = _pivot(torso, "Head", Vector3(0, 0.57, 0))
-	var skull := _part(head, _sphere(0.1), Vector3(0, 0.12, 0), "skin")
-	skull.scale = Vector3(0.92, 1.12, 1.0)
-	var mop := _part(head, _sphere(0.106), Vector3(0, 0.155, 0.014), "hair")
-	mop.scale = Vector3(0.97, 0.98, 1.02)
-	for side in [-1.0, 1.0]:
-		_part(head, _sphere(0.013), Vector3(0.036 * side, 0.13, -0.09), "dark")
-	_part(head, _box(Vector3(0.045, 0.007, 0.006)), Vector3(0, 0.068, -0.098), "dark")
+	# The head pivots at the top of the neck and faces -Z.
+	head = _pivot(torso, "Head", Vector3(0, 0.575, 0))
+	_build_head()
 
 	var collider := CollisionShape3D.new()
 	collider.name = "Body"
@@ -124,6 +184,89 @@ func _build() -> void:
 	add_child(collider)
 
 	_apply_pose()
+
+func _build_head() -> void:
+	var skull := _part(head, _sphere(0.098), Vector3(0, 0.125, 0.008), "skin")
+	skull.scale = Vector3(0.9, 1.1, 1.0)
+	var jaw := _part(head, _sphere(0.078), Vector3(0, 0.07, -0.022), "skin")
+	jaw.scale = Vector3(0.95, 0.9, 1.0)
+	var chin := _part(head, _sphere(0.028), Vector3(0, 0.038, -0.06), "skin")
+	chin.scale = Vector3(1.2, 0.9, 0.9)
+
+	var nose := _part(head, _prism(Vector3(0.022, 0.04, 0.022)), Vector3(0, 0.108, -0.095), "skin")
+	nose.rotation.x = deg_to_rad(-12.0)
+	_part(head, _sphere(0.0105), Vector3(0, 0.091, -0.1), "skin")
+	for side in [-1.0, 1.0]:
+		var ear := _part(head, _sphere(0.026), Vector3(0.087 * side, 0.115, 0.01), "skin")
+		ear.scale = Vector3(0.45, 1.0, 0.75)
+		# Brow ridge, then the eye tucked under it.
+		var brow := _part(head, _box(Vector3(0.036, 0.007, 0.012)), Vector3(0.033 * side, 0.152, -0.091), "hair")
+		brow.rotation.z = deg_to_rad(-6.0 * side)
+		var eye := _pivot(head, "Eye", Vector3(0.032 * side, 0.132, -0.08))
+		var white := _part(eye, _sphere(0.012), Vector3.ZERO, "white")
+		white.scale = Vector3(1.2, 0.7, 0.6)
+		_part(eye, _sphere(0.006), Vector3(0, 0, -0.0055), "iris")
+		_eyes.append(eye)
+
+	var lip_top := _part(head, _capsule(0.005, 0.036), Vector3(0, 0.064, -0.088), "lip")
+	lip_top.rotation.z = deg_to_rad(90.0)
+	var lip_low := _part(head, _capsule(0.006, 0.032), Vector3(0, 0.056, -0.086), "lip")
+	lip_low.rotation.z = deg_to_rad(90.0)
+
+	_build_hair()
+
+	if facial_hair == PortraitFactory.FacialHair.BEARD:
+		var beard := _part(head, _sphere(0.08), Vector3(0, 0.058, -0.03), "hair")
+		beard.scale = Vector3(0.98, 0.78, 1.0)
+	if facial_hair in [PortraitFactory.FacialHair.BEARD, PortraitFactory.FacialHair.MOUSTACHE]:
+		var tache := _part(head, _capsule(0.008, 0.05), Vector3(0, 0.074, -0.097), "hair")
+		tache.rotation.z = deg_to_rad(90.0)
+
+	if glasses:
+		for side in [-1.0, 1.0]:
+			var rim := _part(head, _torus(0.019, 0.023), Vector3(0.033 * side, 0.132, -0.1), "frame")
+			rim.rotation.x = deg_to_rad(90.0)
+			rim.scale = Vector3(1.2, 1.0, 0.85)
+			_part(head, _box(Vector3(0.004, 0.004, 0.1)), Vector3(0.084 * side, 0.135, -0.05), "frame")
+		_part(head, _box(Vector3(0.022, 0.004, 0.004)), Vector3(0, 0.136, -0.104), "frame")
+
+func _build_hair() -> void:
+	var H := PortraitFactory.Hair
+	var cap_scale := Vector3(0.95, 0.9, 1.04)
+	var cap_at := Vector3(0, 0.155, 0.018)
+	var radius := 0.1
+	if hair_style == H.BUZZ:
+		radius = 0.097
+		cap_at = Vector3(0, 0.145, 0.012)
+	var cap := _part(head, _sphere(radius), cap_at, "hair")
+	cap.scale = cap_scale
+	# The back of the head down to the nape.
+	var nape := _part(head, _sphere(0.085), Vector3(0, 0.1, 0.04), "hair")
+	nape.scale = Vector3(1.0, 0.9, 0.8)
+
+	match hair_style:
+		H.LONG:
+			var fall := _part(head, _capsule(0.09, 0.3), Vector3(0, 0.02, 0.05), "hair")
+			fall.scale = Vector3(1.12, 1.0, 0.55)
+			for side in [-1.0, 1.0]:
+				var lock := _part(head, _capsule(0.03, 0.2), Vector3(0.078 * side, 0.06, -0.02), "hair")
+				lock.scale = Vector3(1.0, 1.0, 1.3)
+		H.BUN:
+			_part(head, _sphere(0.045), Vector3(0, 0.235, 0.06), "hair")
+		H.SIDE_PART:
+			var sweep := _part(head, _sphere(0.06), Vector3(-0.035, 0.215, -0.045), "hair")
+			sweep.scale = Vector3(1.4, 0.6, 1.0)
+
+func _rebuild() -> void:
+	if not _built:
+		return
+	for child in get_children():
+		if child != null and child.name in ["Rig", "Body"]:
+			remove_child(child)
+			child.free()
+	_eyes.clear()
+	_built = false
+	_build()
 
 func _pivot(parent: Node, node_name: String, at: Vector3) -> Node3D:
 	var node := Node3D.new()
@@ -145,10 +288,23 @@ func _box(size: Vector3) -> BoxMesh:
 	mesh.size = size
 	return mesh
 
+func _prism(size: Vector3) -> PrismMesh:
+	var mesh := PrismMesh.new()
+	mesh.size = size
+	return mesh
+
+func _torus(inner: float, outer: float) -> TorusMesh:
+	var mesh := TorusMesh.new()
+	mesh.inner_radius = inner
+	mesh.outer_radius = outer
+	mesh.rings = 16
+	mesh.ring_segments = 6
+	return mesh
+
 func _capsule(radius: float, height: float) -> CapsuleMesh:
 	var mesh := CapsuleMesh.new()
 	mesh.radius = radius
-	mesh.height = height
+	mesh.height = maxf(height, radius * 2.0)
 	mesh.radial_segments = 16
 	mesh.rings = 6
 	return mesh
@@ -157,15 +313,21 @@ func _sphere(radius: float) -> SphereMesh:
 	var mesh := SphereMesh.new()
 	mesh.radius = radius
 	mesh.height = radius * 2.0
-	mesh.radial_segments = 16
+	mesh.radial_segments = 18
 	mesh.rings = 10
 	return mesh
 
 func _cylinder(radius: float, height: float) -> CylinderMesh:
+	return _tapered(radius, radius, height)
+
+## A limb segment, wider at the top.
+func _tapered(top: float, bottom: float, height: float) -> CylinderMesh:
 	var mesh := CylinderMesh.new()
-	mesh.top_radius = radius
-	mesh.bottom_radius = radius
+	mesh.top_radius = top
+	mesh.bottom_radius = bottom
 	mesh.height = height
+	mesh.radial_segments = 14
+	mesh.rings = 1
 	return mesh
 
 func _recolour() -> void:
@@ -175,7 +337,12 @@ func _recolour() -> void:
 	(_materials["hair"] as StandardMaterial3D).albedo_color = hair
 	(_materials["jacket"] as StandardMaterial3D).albedo_color = jacket
 	(_materials["trousers"] as StandardMaterial3D).albedo_color = trousers
+	(_materials["shirt"] as StandardMaterial3D).albedo_color = shirt
 	(_materials["dark"] as StandardMaterial3D).albedo_color = Color(0.07, 0.07, 0.08)
+	(_materials["lip"] as StandardMaterial3D).albedo_color = skin.lerp(Color(0.62, 0.30, 0.32), 0.4)
+	(_materials["white"] as StandardMaterial3D).albedo_color = Color(0.86, 0.85, 0.82)
+	(_materials["iris"] as StandardMaterial3D).albedo_color = eyes.darkened(0.3)
+	(_materials["frame"] as StandardMaterial3D).albedo_color = Color(0.08, 0.08, 0.09)
 
 func _apply_pose() -> void:
 	if pose == Pose.SEATED:
@@ -185,6 +352,9 @@ func _apply_pose() -> void:
 			thigh.rotation.x = deg_to_rad(90.0)
 		for shin in [shin_l, shin_r]:
 			shin.rotation.x = deg_to_rad(-90.0)
+		# Forearms forward, resting toward the desk.
+		for forearm in [forearm_l, forearm_r]:
+			forearm.rotation.x = deg_to_rad(-70.0)
 	else:
 		torso.position.y = HIP_Y
 		for thigh in [thigh_l, thigh_r]:
@@ -192,6 +362,8 @@ func _apply_pose() -> void:
 			thigh.rotation.x = 0.0
 		for shin in [shin_l, shin_r]:
 			shin.rotation.x = 0.0
+		for forearm in [forearm_l, forearm_r]:
+			forearm.rotation.x = ELBOW_REST
 
 # --- Appearance from paperwork -------------------------------------------------
 
@@ -199,9 +371,21 @@ func _apply_pose() -> void:
 static func for_request(request: VisitorRequest) -> VisitorFigure:
 	var figure := VisitorFigure.new()
 	figure.name = "Visitor"
-	var colours := colours_from_portrait(request.visitor_portrait)
-	figure.skin = colours.get("skin", figure.skin)
-	figure.hair = colours.get("hair", figure.hair)
+	var face := request.visitor_face
+	if face:
+		figure.skin = face.skin
+		figure.hair = face.hair
+		figure.eyes = face.eyes
+		figure.jacket = face.clothes
+		figure.shirt = face.inner
+		figure.hair_style = face.hair_style
+		figure.facial_hair = face.facial_hair
+		figure.glasses = face.glasses
+		figure.stature = face.height
+	else:
+		var colours := colours_from_portrait(request.visitor_portrait)
+		figure.skin = colours.get("skin", figure.skin)
+		figure.hair = colours.get("hair", figure.hair)
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(request.visitor_name)
@@ -209,11 +393,12 @@ static func for_request(request: VisitorRequest) -> VisitorFigure:
 		Color(0.38, 0.36, 0.34), Color(0.28, 0.20, 0.20), Color(0.16, 0.17, 0.20),
 		Color(0.45, 0.43, 0.40)]
 	var legs := [Color(0.16, 0.17, 0.20), Color(0.22, 0.24, 0.30), Color(0.30, 0.28, 0.25)]
-	figure.jacket = jackets[rng.randi() % jackets.size()]
+	if face == null:
+		figure.jacket = jackets[rng.randi() % jackets.size()]
 	figure.trousers = legs[rng.randi() % legs.size()]
 	return figure
 
-## Sample skin and hair from a PortraitFactory image: a cheek below the eyes, and the fringe above them.
+## Sample skin and hair from a portrait: a cheek below the eyes, and the hair above the forehead.
 static func colours_from_portrait(texture: Texture2D) -> Dictionary:
 	if texture == null:
 		return {}
@@ -223,8 +408,8 @@ static func colours_from_portrait(texture: Texture2D) -> Dictionary:
 	var w := image.get_width()
 	var h := image.get_height()
 	return {
-		"skin": _average(image, int(w * 0.5 - w * 0.34 * 0.45), int(h * 0.46 + h * 0.40 * 0.2)),
-		"hair": _average(image, int(w * 0.5), int(h * 0.22)),
+		"skin": _average(image, int(w * 0.40), int(h * 0.50)),
+		"hair": _average(image, int(w * 0.5), int(h * 0.13)),
 	}
 
 static func _average(image: Image, cx: int, cy: int) -> Color:
@@ -295,6 +480,16 @@ func _process(delta: float) -> void:
 		head.rotation.y = lerp(head.rotation.y, sin(_idle_t * 0.37) * 0.05, delta * 2.0)
 		head.rotation.x = lerp(head.rotation.x, sin(_idle_t * 0.23) * 0.03, delta * 2.0)
 		torso.rotation.z = sin(_idle_t * 0.3) * 0.012
+	_blink()
+
+func _blink() -> void:
+	if _idle_t < _next_blink:
+		return
+	var closing := _idle_t - _next_blink < 0.12
+	for eye in _eyes:
+		eye.scale.y = 0.1 if closing else 1.0
+	if not closing:
+		_next_blink = _idle_t + randf_range(2.0, 5.5)
 
 func _walk_cycle(delta: float) -> void:
 	_walk_phase += delta * walk_speed * 3.4
@@ -310,6 +505,8 @@ func _walk_cycle(delta: float) -> void:
 func _rest_limbs() -> void:
 	for limb in [thigh_l, thigh_r, shin_l, shin_r, arm_l, arm_r]:
 		limb.rotation.x = 0.0
+	arm_l.rotation.z = 0.0
+	arm_r.rotation.z = 0.0
 	_apply_pose()
 
 # --- Tells ------------------------------------------------------------------------
@@ -341,8 +538,10 @@ func perform(delivery: int, lead_in: float, speaking: float, exit_point: Vector3
 			t.tween_property(arm_l, "rotation:x", deg_to_rad(-80.0), 0.3)
 			t.parallel().tween_property(arm_l, "rotation:z", deg_to_rad(-35.0), 0.3)
 			t.parallel().tween_property(head, "rotation:x", deg_to_rad(-28.0), 0.3)
+			t.parallel().tween_property(forearm_l, "rotation:x", deg_to_rad(-60.0), 0.3)
 			t.tween_interval(0.8)
 			t.tween_property(arm_l, "rotation:x", 0.0, 0.35)
+			t.parallel().tween_property(forearm_l, "rotation:x", ELBOW_REST, 0.35)
 			t.parallel().tween_property(arm_l, "rotation:z", 0.0, 0.35)
 			t.parallel().tween_property(head, "rotation:x", 0.0, 0.35)
 			_talk(t, maxf(speaking - 0.5, 0.4), 0.04)
@@ -373,12 +572,16 @@ func perform(delivery: int, lead_in: float, speaking: float, exit_point: Vector3
 			var beats := maxi(2, int(speaking * 1.6))
 			for i in beats:
 				var arm := arm_r if i % 2 == 0 else arm_l
+				var fore := forearm_r if i % 2 == 0 else forearm_l
 				t.tween_property(arm, "rotation:x", deg_to_rad(-38.0), 0.25)
+				t.parallel().tween_property(fore, "rotation:x", deg_to_rad(-55.0), 0.25)
 				t.parallel().tween_property(head, "rotation:x", deg_to_rad(4.0), 0.25)
 				t.tween_property(arm, "rotation:x", deg_to_rad(-12.0), 0.3)
 				t.parallel().tween_property(head, "rotation:x", 0.0, 0.3)
 			t.tween_property(arm_l, "rotation:x", 0.0, 0.3)
 			t.parallel().tween_property(arm_r, "rotation:x", 0.0, 0.3)
+			t.parallel().tween_property(forearm_l, "rotation:x", ELBOW_REST, 0.3)
+			t.parallel().tween_property(forearm_r, "rotation:x", ELBOW_REST, 0.3)
 
 		_:
 			_talk(t, lead_in + speaking, 0.04)

@@ -1,6 +1,8 @@
 extends Resource
 class_name VisitorRequest
 
+const PHOTO_SIZE := Vector2i(240, 300)
+
 ## One visitor's paperwork, as it arrives at the desk.
 
 ## The four generic wrongness types.
@@ -15,7 +17,13 @@ enum Wrongness {
 @export_group("Visitor")
 ## Who is actually standing at the desk.
 @export var visitor_name: String = ""
-@export var visitor_portrait: Texture2D
+@export var visitor_portrait: Texture2D:
+	get:
+		if visitor_portrait == null and visitor_face != null:
+			visitor_portrait = PortraitFactory.render(visitor_face, PHOTO_SIZE)
+		return visitor_portrait
+## The face behind `visitor_portrait`, so the 3D figure can match it. Photos render on first use.
+var visitor_face: PortraitFactory.FaceTraits
 
 @export_group("Request form")
 @export var task_id: String = ""
@@ -36,7 +44,12 @@ enum Wrongness {
 @export var id_name: String = ""
 ## Format BIC-YY-NNNNNN (rule 2).
 @export var id_number: String = ""
-@export var id_photo: Texture2D
+@export var id_photo: Texture2D:
+	get:
+		if id_photo == null and id_face != null:
+			id_photo = visitor_portrait if id_face == visitor_face else PortraitFactory.render(id_face, PHOTO_SIZE)
+		return id_photo
+var id_face: PortraitFactory.FaceTraits
 ## Whether the ID photo is actually this visitor (rule 4).
 @export var photo_matches: bool = true
 

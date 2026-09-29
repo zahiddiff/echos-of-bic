@@ -11,9 +11,13 @@ extends Control
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	get_tree().paused = false
+	# Every run starts here, from shift one.
+	var remembered := GameState.player_name
+	GameState.reset()
 	error_label.visible = false
 	name_field.max_length = max_name_length
-	name_field.text = GameState.player_name
+	name_field.text = remembered
 	name_field.grab_focus()
 
 	name_field.text_submitted.connect(_on_text_submitted)

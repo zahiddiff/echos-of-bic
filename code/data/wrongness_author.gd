@@ -53,9 +53,10 @@ func _identity(request: VisitorRequest, difficulty: float) -> void:
 			request.photo_matches = false
 			if generate_portraits:
 				var face := PortraitFactory.traits_for(rng.randi())
-				request.visitor_portrait = PortraitFactory.render(face, PHOTO_SIZE)
-				request.id_photo = PortraitFactory.render(
-					PortraitFactory.variant_of(face, rng.randi(), difficulty), PHOTO_SIZE)
+				request.visitor_face = face
+				request.id_face = PortraitFactory.variant_of(face, rng.randi(), difficulty)
+				request.visitor_portrait = null
+				request.id_photo = null
 
 # --- Data --------------------------------------------------------------------
 # The paperwork is internally impossible, or contradicts the record on file.

@@ -23,15 +23,30 @@ var _audio: AudioStreamPlayer
 
 var _home_positions: Dictionary = {}
 
+const DEFAULT_HINT := "Drag the papers  ·  Magnifier over a photo  ·  Click the stamp, slip or radio to decide  ·  Esc to stand"
+const INK_DARK := Color(0.12, 0.11, 0.1)
+const INK_SOFT := Color(0.42, 0.4, 0.36)
+
+## The desk reference: what counts as valid tonight.
+var rulebook_sheet: DraggablePaper
+var _rules_box: VBoxContainer
+var _mark: Label
+
 func _ready() -> void:
 	_home_positions[request_form] = request_form.position
 	_home_positions[id_card] = id_card.position
 	_home_positions[magnifier] = magnifier.position
+	# Out of the way of the ID card, so both photos can be compared side by side.
+	magnifier.position = Vector2(640, 150)
+	_home_positions[magnifier] = magnifier.position
+	_build_rulebook_sheet()
+	_home_positions[rulebook_sheet] = rulebook_sheet.position
+	hint_label.text = DEFAULT_HINT
 
 	_audio = AudioStreamPlayer.new()
 	_audio.name = "PaperAudio"
 	add_child(_audio)
-	for paper: DraggablePaper in [request_form, id_card]:
+	for paper: DraggablePaper in [request_form, id_card, rulebook_sheet]:
 		paper.picked_up.connect(func(_p: DraggablePaper) -> void: _play(pickup_sound))
 		paper.dropped.connect(func(_p: DraggablePaper) -> void: _play(drop_sound))
 
@@ -72,7 +87,125 @@ func show_request(new_request: VisitorRequest) -> void:
 	id_photo.texture = request.id_photo
 	visitor_photo.texture = request.visitor_portrait
 
+	_mark.visible = false
 	reset_layout()
+
+## What the rules are tonight. During training only what Rahat has covered so far.
+func show_rulebook(book: Rulebook) -> void:
+	for child in _rules_box.get_children():
+		_rules_box.remove_child(child)
+		child.queue_free()
+	_rules_box.add_child(_paper_label("Today  %s" % book.current_date, 13, INK_DARK))
+	var rules: Array = book.enabled_rules if not book.enabled_rules.is_empty() else Rulebook.RULE_TITLES.keys()
+	for rule in Rulebook.RULE_TITLES.keys():
+		if not rules.has(rule):
+			continue
+		var line := ""
+		match rule:
+			Rulebook.Rule.NAME_MATCH:
+				line = "Name on the form matches the ID card."
+			Rulebook.Rule.ID_FORMAT:
+				line = "ID reads BIC-YY-NNNNNN, six digits. Year %02d to %02d." % [book.min_enrollment_year, book.max_enrollment_year]
+			Rulebook.Rule.COLLEGE_CODE:
+				line = "College code is one of: %s" % "  ".join(book.valid_college_codes)
+			Rulebook.Rule.PHOTO_MATCH:
+				line = "The ID photo is the person at the desk."
+			Rulebook.Rule.VALIDITY_WINDOW:
+				line = "Issue date plus the window has not passed today."
+			Rulebook.Rule.PRIOR_STAMP:
+				line = "If a prior approval is required, it is there."
+		var row := VBoxContainer.new()
+		row.add_theme_constant_override("separation", 0)
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(_paper_label(str(Rulebook.RULE_TITLES[rule]).to_upper(), 10, INK_SOFT))
+		row.add_child(_paper_label(line, 13, INK_DARK))
+		_rules_box.add_child(row)
+	if rules.size() < Rulebook.RULE_TITLES.size():
+		_rules_box.add_child(_paper_label("More rules are added as you are trained.", 11, INK_SOFT))
+
+## Ink on the form once a decision is made.
+func stamp_mark(approved: bool) -> void:
+	_mark.text = "APPROVED" if approved else "REJECTED"
+	var ink := Color(0.16, 0.45, 0.24) if approved else Color(0.66, 0.16, 0.14)
+	_mark.add_theme_color_override("font_color", ink)
+	var box := StyleBoxFlat.new()
+	box.bg_color = Color(0, 0, 0, 0)
+	box.border_color = ink
+	box.set_border_width_all(3)
+	box.set_corner_radius_all(4)
+	box.set_content_margin_all(8)
+	_mark.add_theme_stylebox_override("normal", box)
+	_mark.visible = true
+	_mark.pivot_offset = _mark.size * 0.5
+	_mark.scale = Vector2(1.6, 1.6)
+	_mark.modulate.a = 0.0
+	var t := create_tween()
+	t.tween_property(_mark, "scale", Vector2.ONE, 0.12).set_ease(Tween.EASE_IN)
+	t.parallel().tween_property(_mark, "modulate:a", 0.88, 0.08)
+
+func show_hint(text: String) -> void:
+	hint_label.text = text
+
+func clear_hint() -> void:
+	hint_label.text = DEFAULT_HINT
+
+func _build_rulebook_sheet() -> void:
+	rulebook_sheet = DraggablePaper.new()
+	rulebook_sheet.name = "Rulebook"
+	rulebook_sheet.lift_tilt = 1.2
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0.93, 0.91, 0.8)
+	style.border_color = Color(0.68, 0.65, 0.54)
+	style.set_border_width_all(1)
+	style.shadow_color = Color(0, 0, 0, 0.45)
+	style.shadow_size = 10
+	style.shadow_offset = Vector2(3, 5)
+	style.set_content_margin_all(16)
+	rulebook_sheet.add_theme_stylebox_override("panel", style)
+	rulebook_sheet.custom_minimum_size = Vector2(300, 0)
+	rulebook_sheet.position = Vector2(950, 418)
+	rulebook_sheet.rotation_degrees = -1.5
+	surface.add_child(rulebook_sheet)
+	surface.move_child(rulebook_sheet, magnifier.get_index())
+
+	var column := VBoxContainer.new()
+	column.add_theme_constant_override("separation", 6)
+	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rulebook_sheet.add_child(column)
+	column.add_child(_paper_label("DESK RULES", 11, INK_SOFT))
+	var rule := ColorRect.new()
+	rule.color = Color(0.6, 0.58, 0.5)
+	rule.custom_minimum_size = Vector2(0, 1)
+	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_child(rule)
+	_rules_box = VBoxContainer.new()
+	_rules_box.add_theme_constant_override("separation", 6)
+	_rules_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.add_child(_rules_box)
+
+	_mark = Label.new()
+	_mark.name = "DecisionMark"
+	_mark.add_theme_font_size_override("font_size", 34)
+	_mark.rotation_degrees = -14.0
+	_mark.position = Vector2(170, 330)
+	_mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_mark.visible = false
+	# The form is a container; a plain Control inside it lets the mark float over the rows.
+	var layer := Control.new()
+	layer.name = "MarkLayer"
+	layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	request_form.add_child(layer)
+	layer.add_child(_mark)
+
+func _paper_label(text: String, size: int, colour: Color) -> Label:
+	var l := Label.new()
+	l.text = text
+	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_color_override("font_color", colour)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size = Vector2(268, 0)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return l
 
 func reset_layout() -> void:
 	for node: Control in _home_positions:
@@ -91,7 +224,7 @@ func _set_value(row: String, value: String) -> void:
 
 func _on_magnifier_subject_changed(subject: TextureRect) -> void:
 	if subject == null:
-		hint_label.text = "Drag the papers  ·  Drag the magnifier over a photo  ·  Esc to step back"
+		hint_label.text = DEFAULT_HINT
 		return
 	var subject_name := "the ID photo" if subject == id_photo else "the visitor"
 	hint_label.text = "Magnifying %s" % subject_name

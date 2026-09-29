@@ -38,9 +38,8 @@ func clean_request(task: TaskPool.TaskType) -> VisitorRequest:
 	request.photo_matches = true
 	if generate_portraits:
 		var face := PortraitFactory.traits_for(rng.randi())
-		var photo := PortraitFactory.render(face, PHOTO_SIZE)
-		request.id_photo = photo
-		request.visitor_portrait = photo
+		request.visitor_face = face
+		request.id_face = face
 
 	return request
 

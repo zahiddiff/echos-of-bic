@@ -21,12 +21,18 @@ enum Decision { APPROVE, REJECT, FLAG }
 signal decision_made(request: VisitorRequest, decision: Decision)
 
 @export_group("Shift")
-## Which of the 8 shifts to run.
-@export_range(1, 8) var shift: int = 1
+## Which of the 8 shifts to run. 0 continues the current run.
+@export_range(0, 8) var shift: int = 0
 ## 0 means a fresh seed each run.
 @export var queue_seed: int = 0
 ## People walk in, queue, step up and leave.
 @export var visitors_enabled: bool = true
+## How long a decision stays on the desk before the next visitor's papers come up.
+@export var decision_pause: float = 1.1
+## Night shift starts at this hour.
+@export var start_hour: int = 21
+## Clocking out loads the next night. Off in tests, which own the scene tree.
+@export var reload_on_continue: bool = true
 
 ## Every sound in the building.
 @export var audio: AudioCues = preload("res://assets/audio/bic_audio_cues.tres")
@@ -41,7 +47,27 @@ var lighting := ShiftLighting.new()
 
 var _ticket: VisitorTicket
 
+var status_bar: StatusBar
+var report: ShiftReport
+var pause_menu: PauseMenu
+## What the player did this shift, for the report. No verdicts: the desk never says who was right.
+var tally := {"approved": 0, "rejected": 0, "flagged": 0}
+var clock_minutes: float = 0.0
+var _end_reason: int = -1
+
+const TITLE_SCENE := "res://scenes/ui/name_entry.tscn"
+## Game minutes that pass per real second, and per visitor served.
+const MINUTES_PER_SECOND := 0.25
+const MINUTES_PER_VISITOR := 14.0
+
 func _ready() -> void:
+	if shift == 0:
+		shift = GameState.shift
+	else:
+		GameState.shift = shift
+	clock_minutes = start_hour * 60.0
+	_build_interface()
+
 	player.focus_changed.connect(hud._on_player_focus_changed)
 	player.interacted.connect(hud._on_player_interacted)
 
@@ -67,6 +93,7 @@ func _ready() -> void:
 	for action in [stamp, slip, radio, records]:
 		var click: ClickTarget = action.get_node("ClickTarget")
 		click.clicked.connect(_on_desk_action_clicked)
+		click.hovered.connect(_on_desk_action_hovered)
 
 	# The building reacts to what this run has actually been, before the night starts.
 	lighting.apply(self, shift)
@@ -86,6 +113,38 @@ func _ready() -> void:
 	if GameState.has_player_name():
 		hud.show_activity("Shift %d — %s" % [shift, GameState.player_name])
 
+func _build_interface() -> void:
+	status_bar = StatusBar.new()
+	status_bar.name = "StatusBar"
+	add_child(status_bar)
+	report = ShiftReport.new()
+	report.name = "ShiftReport"
+	add_child(report)
+	report.continue_requested.connect(_on_report_continue)
+	report.new_run_requested.connect(_on_new_run)
+	pause_menu = PauseMenu.new()
+	pause_menu.name = "PauseMenu"
+	add_child(pause_menu)
+	pause_menu.quit_requested.connect(func() -> void:
+		get_tree().change_scene_to_file(TITLE_SCENE))
+	GameState.strike_taken.connect(status_bar.set_strikes)
+
+func _process(delta: float) -> void:
+	if runner and not runner.shift_over:
+		clock_minutes += delta * MINUTES_PER_SECOND
+	status_bar.set_clock(clock_text())
+	status_bar.set_waiting(visitors_remaining())
+	# A released mouse away from the desk means the player has stepped out of the game.
+	if _pause_allowed() and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED 			and not desk.is_seated and not report.is_showing and not pause_menu.is_open:
+		pause_menu.open("Shift %d  ·  %s" % [shift, clock_text()])
+
+func _pause_allowed() -> bool:
+	return DisplayServer.get_name() != "headless"
+
+func clock_text() -> String:
+	var total := int(clock_minutes) % (24 * 60)
+	return "%02d:%02d" % [total / 60, total % 60]
+
 func _start_shift() -> void:
 	runner = ShiftRunner.new()
 	runner.name = "ShiftRunner"
@@ -102,6 +161,7 @@ func _start_shift() -> void:
 	runner.rule_taught.connect(_on_rule_taught)
 
 	runner.start(shift, queue_seed)
+	status_bar.set_shift(shift, runner.is_onboarding)
 	records.load_records(_records_for_queue())
 
 	print("[BIC] shift %d%s — %d visitors, %d threats, %d strikes left"
@@ -164,6 +224,7 @@ func _on_desk_seated(_player: Node) -> void:
 	radio.load_document(_ticket)
 
 	viewer.show_request(request)
+	viewer.show_rulebook(rulebook)
 	hud.visible = false
 	get_viewport().physics_object_picking = true
 
@@ -188,10 +249,22 @@ func _on_desk_action_clicked(action: Node) -> void:
 	if desk.is_seated and action.has_method("interact"):
 		action.interact(player)
 
+func _on_desk_action_hovered(action: Node, inside: bool) -> void:
+	if not desk.is_seated:
+		return
+	if inside and action.has_method("get_prompt"):
+		viewer.show_hint("Click: %s" % action.get_prompt())
+	else:
+		viewer.clear_hint()
+
 func _on_approved(document: Node) -> void:
+	if document == _ticket:
+		viewer.stamp_mark(true)
 	_resolve(document, Decision.APPROVE, "Stamped APPROVED")
 
 func _on_rejected(document: Node) -> void:
+	if document == _ticket:
+		viewer.stamp_mark(false)
 	_resolve(document, Decision.REJECT, "Rejection slip filled out")
 
 func _on_flag_started(_document: Node) -> void:
@@ -208,6 +281,8 @@ func _resolve(document: Node, decision: Decision, note: String) -> void:
 
 	# Deliberately no "correct!" feedback.
 	hud.show_activity(note)
+	tally[["approved", "rejected", "flagged"][int(decision)]] += 1
+	clock_minutes += MINUTES_PER_VISITOR
 	decision_made.emit(request, decision)
 
 	_clear_ticket()
@@ -236,8 +311,12 @@ func _on_visitor_ready(request: VisitorRequest) -> void:
 		stage.call_forward(request, runner.peek(1))
 	if not desk.is_seated:
 		return
+	# Leave the decision on the desk for a moment before the next papers come up.
+	if decision_pause > 0.0 and viewer.visible:
+		await get_tree().create_timer(decision_pause).timeout
+		if not desk.is_seated or current_request() != request:
+			return
 	_on_desk_seated(player)
-	var _unused := request
 
 func _on_incident(request: VisitorRequest) -> void:
 	# Somewhere else in the building, hours after the fact.
@@ -280,6 +359,54 @@ func _on_shift_ended(reason: ShiftRunner.EndReason) -> void:
 	print("[BIC] %s. strikes left: %d" % [how, GameState.strikes_remaining()])
 	# An incident changes the building.
 	story.refresh()
+	_end_reason = reason
+	_show_report_when_quiet()
+
+## Let whoever is talking finish, then close the night.
+func _show_report_when_quiet() -> void:
+	await get_tree().create_timer(1.5).timeout
+	while dialogue.is_busy():
+		await get_tree().create_timer(0.25).timeout
+	await get_tree().create_timer(1.0).timeout
+	if not is_inside_tree():
+		return
+	if desk.is_seated:
+		desk.stand()
+	viewer.visible = false
+	terminal.dismiss()
+	dialogue.visible = false
+	hud.visible = false
+	status_bar.visible = false
+	report.show_report(shift_summary())
+
+func shift_summary() -> Dictionary:
+	return {
+		"shift": shift,
+		"training": runner.is_onboarding,
+		"reason": _end_reason,
+		"seen": runner.index,
+		"total": runner.queue.size(),
+		"approved": tally["approved"],
+		"rejected": tally["rejected"],
+		"flagged": tally["flagged"],
+		"strikes_left": GameState.strikes_remaining(),
+		"clock_out": clock_text(),
+		"run_over": GameState.run_over or GameState.is_final_shift(),
+	}
+
+func _on_report_continue() -> void:
+	runner.close_out()
+	if GameState.run_over:
+		report.show_ending(GameState.ending, Dean.ending_lines(GameState.ending))
+		return
+	# The next night, same building.
+	shift = 0
+	if reload_on_continue:
+		get_tree().reload_current_scene()
+
+func _on_new_run() -> void:
+	GameState.reset()
+	get_tree().change_scene_to_file(TITLE_SCENE)
 
 # --- Doors --------------------------------------------------------------------
 

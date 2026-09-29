@@ -44,6 +44,36 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.043, 0.047, 0.055, 1)
 
+[node name="GameTitle" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -400.0
+offset_top = 64.0
+offset_right = 400.0
+offset_bottom = 124.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.86, 0.74, 0.47, 1)
+theme_override_font_sizes/font_size = 46
+text = "ECHOES OF BIC"
+horizontal_alignment = 1
+
+[node name="Tagline" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -400.0
+offset_top = 124.0
+offset_right = 400.0
+offset_bottom = 150.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.5, 0.52, 0.55, 1)
+theme_override_font_sizes/font_size = 15
+text = "Most people are exactly who they say they are."
+horizontal_alignment = 1
+
 [node name="Frame" type="CenterContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15

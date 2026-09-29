@@ -171,6 +171,9 @@ func dean_arrives() -> void:
 	dean.hair = Color(0.56, 0.56, 0.57)
 	dean.jacket = Color(0.14, 0.14, 0.16)
 	dean.trousers = Color(0.12, 0.12, 0.14)
+	dean.hair_style = PortraitFactory.Hair.SIDE_PART
+	dean.glasses = true
+	dean.stature = 1.04
 	dean.walk_speed = 1.25
 	add_child(dean)
 	dean.global_position = _outside()
@@ -186,6 +189,8 @@ func _make_guard() -> VisitorFigure:
 	guard.hair = Color(0.10, 0.09, 0.09)
 	guard.jacket = Color(0.12, 0.15, 0.24)
 	guard.trousers = Color(0.08, 0.08, 0.10)
+	guard.hair_style = PortraitFactory.Hair.BUZZ
+	guard.stature = 1.06
 	guard.walk_speed = 1.35
 	return guard
 

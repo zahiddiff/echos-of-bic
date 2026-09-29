@@ -501,6 +501,7 @@ func _build_other_desk(parent: Node) -> void:
 	him.set("jacket", Color(0.17, 0.21, 0.30))
 	him.set("trousers", Color(0.20, 0.20, 0.22))
 	him.set("pose", 1)
+	him.set("facial_hair", 1)
 
 func _build_print_room(parent: Node) -> void:
 	_box(parent, "Printer", Vector3(0.9, 1.15, 0.7), Vector3(-3.0, 0.575, Z_MAX - 0.7), "prop")
