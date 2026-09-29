@@ -108,6 +108,12 @@ func _start_shift() -> void:
 		% [shift, " (onboarding)" if runner.is_onboarding else "",
 			runner.queue.size(), _threat_count(), GameState.strikes_remaining()])
 
+## Browsers only grant mouse capture inside a click, so clicking while walking recaptures it.
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed \
+			and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED and not desk.is_seated:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
 func _all_doors() -> Array[Door]:
 	var found: Array[Door] = []
 	for node in $Doors.get_children():
