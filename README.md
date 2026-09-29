@@ -10,7 +10,7 @@ Check every visitor's ID and paperwork against the rulebook, then approve, rejec
 
 ![The front desk: request form, ID card, the visitor, and the desk rules](docs/images/desk.png)
 
-**[▶ Play in the browser](https://zahiddiff.github.io/echos-of-bic/)** · **[🎮 Controls](#controls)** · **[🗺 Roadmap](#roadmap)**
+**[▶ Play in the browser](https://zahiddiff.github.io/echos-of-bic/)** · **[🎮 Controls](#controls)** · **[🗺 Roadmap](#roadmap)** · **[🧪 Help playtest](PLAYTESTING.md)**
 
 ![status](https://img.shields.io/badge/status-work%20in%20progress-f0a500)
 ![engine](https://img.shields.io/badge/Godot-4.7-478cbf)
@@ -86,7 +86,8 @@ Every visitor's ID photo is generated from a face (skin, hair, eyes, glasses, fa
 | Body-language tells, shift lighting, environmental details that react to your run | ✅ Working |
 | Final confrontation | 🚧 Being designed |
 | Real art, voices and recorded sound | 🚧 Placeholders for now |
-| Playtesting and difficulty tuning | 🚧 In progress |
+| Playtest logging, post-shift questions and a balance report tool | ✅ Working |
+| Tuning the difficulty against real playtests | 🚧 Waiting on testers |
 
 ## Controls
 
@@ -102,7 +103,7 @@ Every visitor's ID photo is generated from a face (skin, hair, eyes, glasses, fa
 
 - **Engine:** Godot 4.7, GDScript only, no plugins.
 - **Generated in code:** the building, ID photos, visitor bodies and most of the UI are built procedurally, so the whole game lives as text in the repo.
-- **Tests:** headless suites cover the rulebook, queue generation, the desk, dialogue, consequences, the training shift, characters, the end of a shift, and a balance simulation that plays hundreds of full runs.
+- **Tests:** headless suites cover the rulebook, queue generation, the desk, dialogue, consequences, the training shift, characters, the end of a shift, the playtest log, and a balance simulation that plays hundreds of full runs.
 - **Deploys itself:** every push to `main` runs the tests on GitHub Actions and, if they pass, exports the web build to GitHub Pages.
 
 ```
@@ -126,7 +127,7 @@ tools/         test suites, building generator, balance sim, screenshot tools
 | 8–9 | Threats, incidents and the Dean, strikes, endings | ✅ Final confrontation still being designed |
 | 10 | Scripted training shift | ✅ |
 | 11–13 | Art and audio pass | 🚧 Systems done, placeholder assets |
-| 14–15 | Playtesting and rebalancing | 🚧 In progress |
+| 14–15 | Playtesting and rebalancing | 🚧 In progress: [help test it](PLAYTESTING.md) |
 | 16 | Public demo and store page | 📋 Planned |
 
 ## Running locally

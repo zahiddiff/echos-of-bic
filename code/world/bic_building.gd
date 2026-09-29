@@ -31,6 +31,8 @@ signal decision_made(request: VisitorRequest, decision: Decision)
 @export var decision_pause: float = 1.1
 ## Night shift starts at this hour.
 @export var start_hour: int = 21
+## Releasing the mouse away from the desk pauses the game. Off for screenshot tools.
+@export var pause_on_release: bool = true
 ## Clocking out loads the next night. Off in tests, which own the scene tree.
 @export var reload_on_continue: bool = true
 
@@ -77,6 +79,9 @@ func _ready() -> void:
 
 	desk.seated.connect(_on_desk_seated)
 	desk.stood_up.connect(_on_desk_stood_up)
+	dialogue.follow_up_asked.connect(func(_f: VisitorDialogue.FollowUp) -> void: PlaytestLog.note("follow_up"))
+	viewer.photo_inspected.connect(func(_s: String) -> void: PlaytestLog.note("magnifier"))
+	records.looked_up.connect(func(_q: String, _found: bool) -> void: PlaytestLog.note("lookup"))
 	viewer.closed.connect(_on_viewer_closed)
 
 	stamp.document_approved.connect(_on_approved)
@@ -137,9 +142,10 @@ func _process(delta: float) -> void:
 	# A released mouse away from the desk means the player has stepped out of the game.
 	if _pause_allowed() and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED 			and not desk.is_seated and not report.is_showing and not pause_menu.is_open:
 		pause_menu.open("Shift %d  ·  %s" % [shift, clock_text()])
+		PlaytestLog.event("paused")
 
 func _pause_allowed() -> bool:
-	return DisplayServer.get_name() != "headless"
+	return pause_on_release and DisplayServer.get_name() != "headless"
 
 func clock_text() -> String:
 	var total := int(clock_minutes) % (24 * 60)
@@ -159,7 +165,10 @@ func _start_shift() -> void:
 	runner.sent_home.connect(_on_dean_warning)
 	runner.mentor_line.connect(_on_mentor_line)
 	runner.rule_taught.connect(_on_rule_taught)
+	runner.decision_judged.connect(_on_decision_judged)
 
+	runner.shift_started.connect(func(number: int, count: int) -> void:
+		PlaytestLog.begin_shift(number, ShiftSchedule.is_onboarding(number), count, GameState.strikes_remaining()))
 	runner.start(shift, queue_seed)
 	status_bar.set_shift(shift, runner.is_onboarding)
 	records.load_records(_records_for_queue())
@@ -225,6 +234,7 @@ func _on_desk_seated(_player: Node) -> void:
 
 	viewer.show_request(request)
 	viewer.show_rulebook(rulebook)
+	PlaytestLog.visitor_shown(request, runner.index)
 	hud.visible = false
 	get_viewport().physics_object_picking = true
 
@@ -238,6 +248,7 @@ func _on_desk_stood_up(_player: Node) -> void:
 	dialogue.visible = false
 	hud.visible = true
 	get_viewport().physics_object_picking = false
+	PlaytestLog.stood_up()
 	radio.abort()
 	_clear_ticket()
 	# Standing up does NOT skip anyone — they are still at the counter when you get back.
@@ -281,6 +292,7 @@ func _resolve(document: Node, decision: Decision, note: String) -> void:
 
 	# Deliberately no "correct!" feedback.
 	hud.show_activity(note)
+	PlaytestLog.decision_made(int(decision))
 	tally[["approved", "rejected", "flagged"][int(decision)]] += 1
 	clock_minutes += MINUTES_PER_VISITOR
 	decision_made.emit(request, decision)
@@ -318,7 +330,14 @@ func _on_visitor_ready(request: VisitorRequest) -> void:
 			return
 	_on_desk_seated(player)
 
+func _on_decision_judged(request: VisitorRequest, verdict: DecisionJudge.Verdict) -> void:
+	var broken := PackedStringArray()
+	for finding in rulebook.violations(request):
+		broken.append(finding.title())
+	PlaytestLog.decision_judged(request, verdict, broken)
+
 func _on_incident(request: VisitorRequest) -> void:
+	PlaytestLog.event("incident", {"threat": ThreatType.Kind.keys()[request.threat_kind]})
 	# Somewhere else in the building, hours after the fact.
 	hud.show_activity("Something has happened downstairs.")
 	var _unused := request
@@ -360,6 +379,7 @@ func _on_shift_ended(reason: ShiftRunner.EndReason) -> void:
 	# An incident changes the building.
 	story.refresh()
 	_end_reason = reason
+	PlaytestLog.end_shift(ShiftRunner.EndReason.keys()[reason], GameState.strikes_remaining())
 	_show_report_when_quiet()
 
 ## Let whoever is talking finish, then close the night.
@@ -395,8 +415,11 @@ func shift_summary() -> Dictionary:
 	}
 
 func _on_report_continue() -> void:
+	if not report.feedback.is_empty():
+		PlaytestLog.shift_feedback(report.feedback)
 	runner.close_out()
 	if GameState.run_over:
+		PlaytestLog.end_run(GameState.ending_name(GameState.ending))
 		report.show_ending(GameState.ending, Dean.ending_lines(GameState.ending))
 		return
 	# The next night, same building.

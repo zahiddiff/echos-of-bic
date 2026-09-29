@@ -15,6 +15,7 @@ func _ready() -> void:
 	# Every run starts here, from shift one.
 	var remembered := GameState.player_name
 	GameState.reset()
+	PlaytestLog.start_session()
 	error_label.visible = false
 	name_field.max_length = max_name_length
 	name_field.text = remembered

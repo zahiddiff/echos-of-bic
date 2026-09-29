@@ -16,6 +16,7 @@ func _ready() -> void:
 func _run() -> void:
 	GameState.set_player_name("Zahidul")
 	_building = load("res://scenes/building/bic_building.tscn").instantiate()
+	_building.pause_on_release = false
 	add_child(_building)
 	for i in 10:
 		await get_tree().process_frame

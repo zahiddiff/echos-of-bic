@@ -60,6 +60,10 @@ func _ready() -> void:
 		close()
 		quit_requested.emit())
 	body.add_child(quit)
+	if PlaytestLog.questionnaire:
+		var save_button := UiKit.button("Save playtest log", false)
+		save_button.pressed.connect(func() -> void: save_button.text = "Saved: %s" % PlaytestLog.export_log())
+		body.add_child(save_button)
 
 func open(subtitle: String) -> void:
 	if is_open:

@@ -10,6 +10,13 @@ var summary: Dictionary = {}
 var is_showing: bool = false
 ## "report" or "ending", once shown.
 var mode: String = ""
+## Playtest answers for the shift just shown; empty outside playtest mode.
+var feedback: Dictionary = {}
+
+var _tension: int = 0
+var _tension_buttons: Array[Button] = []
+var _fake_field: LineEdit
+var _confusing_field: LineEdit
 
 var _shade: ColorRect
 var _panel: PanelContainer
@@ -89,9 +96,21 @@ func show_report(data: Dictionary) -> void:
 	_body.add_child(strikes)
 	_body.add_child(_spacer(10))
 
+	feedback = {}
+	_body.add_theme_constant_override("separation", 7 if PlaytestLog.questionnaire else 10)
+	if PlaytestLog.questionnaire:
+		_add_questions()
+
 	var run_over: bool = data.get("run_over", false)
 	var next := UiKit.button("Continue" if run_over else "Clock out")
-	next.pressed.connect(func() -> void: continue_requested.emit())
+	next.pressed.connect(func() -> void:
+		if PlaytestLog.questionnaire:
+			feedback = {
+				"tension": _tension,
+				"felt_fake": _fake_field.text.strip_edges(),
+				"confusing": _confusing_field.text.strip_edges(),
+			}
+		continue_requested.emit())
 	_body.add_child(next)
 	_reveal(next)
 
@@ -121,6 +140,12 @@ func show_ending(which: GameState.Ending, lines: PackedStringArray) -> void:
 	again.pressed.connect(func() -> void: new_run_requested.emit())
 	_body.add_child(again)
 	fades.append(again)
+	if PlaytestLog.questionnaire:
+		var save_button := UiKit.button("Save playtest log", false)
+		save_button.modulate.a = 0.0
+		save_button.pressed.connect(func() -> void: save_button.text = "Saved: %s" % PlaytestLog.export_log())
+		_body.add_child(save_button)
+		fades.append(save_button)
 
 	_reveal(null)
 	var t := create_tween()
@@ -129,6 +154,45 @@ func show_ending(which: GameState.Ending, lines: PackedStringArray) -> void:
 		t.tween_property(control, "modulate:a", 1.0, 0.9)
 		t.tween_interval(0.9)
 	t.tween_callback(again.grab_focus)
+
+## Two short questions, answered before clocking out. Nothing here is required.
+func _add_questions() -> void:
+	var scale := HBoxContainer.new()
+	scale.add_theme_constant_override("separation", 6)
+	_tension = 0
+	_tension_buttons.clear()
+	for value in range(1, 6):
+		var b := UiKit.button(str(value), false)
+		b.custom_minimum_size = Vector2(40, 32)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		b.toggle_mode = true
+		b.pressed.connect(_pick_tension.bind(value))
+		scale.add_child(b)
+		_tension_buttons.append(b)
+	var ends := UiKit.label("How tense was that?  1 calm, 5 on edge", 13, UiKit.MUTED)
+	ends.autowrap_mode = TextServer.AUTOWRAP_OFF
+	ends.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	var gap := Control.new()
+	gap.custom_minimum_size = Vector2(8, 0)
+	scale.add_child(gap)
+	scale.add_child(ends)
+	_body.add_child(scale)
+	_fake_field = _field("Did anything feel fake or out of place? (optional)")
+	_confusing_field = _field("Was anything confusing? (optional)")
+
+func _pick_tension(value: int) -> void:
+	_tension = value
+	for i in _tension_buttons.size():
+		_tension_buttons[i].button_pressed = i == value - 1
+		_tension_buttons[i].modulate = Color(1.5, 1.3, 0.8) if i == value - 1 else Color.WHITE
+
+func _field(placeholder: String) -> LineEdit:
+	var field := LineEdit.new()
+	field.placeholder_text = placeholder
+	field.custom_minimum_size = Vector2(0, 32)
+	field.add_theme_font_size_override("font_size", 14)
+	_body.add_child(field)
+	return field
 
 func _reveal(focus: Control) -> void:
 	visible = true
