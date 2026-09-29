@@ -86,7 +86,7 @@ Every visitor's ID photo is generated from a face (skin, hair, eyes, glasses, fa
 | Scripted training shift with Rahat, teaching one rule at a time | ✅ Working |
 | Shift report, status bar, pause menu, desk rules sheet | ✅ Working |
 | Body-language tells, shift lighting, environmental details that react to your run | ✅ Working |
-| Final confrontation | 🚧 Being designed |
+| Final confrontation | ✅ Working |
 | Real art, voices and recorded sound | 🚧 Placeholders for now |
 | Playtest logging, post-shift questions and a balance report tool | ✅ Working |
 | Tuning the difficulty against real playtests | 🚧 Waiting on testers |
@@ -127,7 +127,7 @@ tools/         test suites, building generator, balance sim, screenshot tools
 | 1–2 | Movement, interaction, gray-box building, name entry | ✅ |
 | 3–5 | The full desk loop | ✅ |
 | 6–7 | Task pool, rulebook, wrongness types, visitor queues | ✅ |
-| 8–9 | Threats, incidents and the Dean, strikes, endings | ✅ Final confrontation still being designed |
+| 8–9 | Threats, incidents and the Dean, strikes, endings, the final confrontation | ✅ |
 | 10 | Scripted training shift | ✅ |
 | 11–13 | Art and audio pass | 🚧 Systems done, placeholder assets |
 | 14–15 | Playtesting and rebalancing | 🚧 In progress: [help test it](PLAYTESTING.md) |

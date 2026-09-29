@@ -57,6 +57,11 @@ var tally := {"approved": 0, "rejected": 0, "flagged": 0}
 var clock_minutes: float = 0.0
 var _end_reason: int = -1
 var collection_points: Array[CollectionPoint] = []
+## The one visitor of the lockdown, while it is running.
+var finale_request: VisitorRequest
+var finale_figure: VisitorFigure
+var finale_outcome: int = Finale.Outcome.NONE
+var _finale_walking := false
 ## A thief using a back-room errand as cover has moved round the counter while the desk was empty.
 var _slipped_away: bool = false
 
@@ -211,6 +216,7 @@ func _start_shift() -> void:
 	runner.shift_ended.connect(_on_shift_ended)
 	runner.incident_occurred.connect(_on_incident)
 	runner.dean_arrived.connect(_on_dean_arrived)
+	runner.finale_started.connect(_on_finale_started)
 	runner.dean_warning.connect(_on_dean_warning)
 	runner.sent_home.connect(_on_dean_warning)
 	runner.mentor_line.connect(_on_mentor_line)
@@ -255,6 +261,8 @@ func _records_for_queue() -> Dictionary:
 	return table
 
 func current_request() -> VisitorRequest:
+	if finale_request:
+		return finale_request
 	return runner.current() if runner else null
 
 func visitors_remaining() -> int:
@@ -354,8 +362,11 @@ func _on_rejected(document: Node) -> void:
 		viewer.stamp_mark(false)
 	_resolve(document, Decision.REJECT, "Rejection slip filled out")
 
-func _on_flag_started(_document: Node) -> void:
+func _on_flag_started(document: Node) -> void:
 	hud.show_activity("Radio: calling security…")
+	var ticket := document as VisitorTicket
+	if ticket and finale_request and ticket.request == finale_request:
+		_finale_heard_the_radio()
 
 func _on_flag_completed(document: Node) -> void:
 	_resolve(document, Decision.FLAG, "Security escorted them out")
@@ -372,6 +383,10 @@ func _resolve(document: Node, decision: Decision, note: String) -> void:
 	tally[["approved", "rejected", "flagged"][int(decision)]] += 1
 	clock_minutes += MINUTES_PER_VISITOR
 	decision_made.emit(request, decision)
+
+	if finale_request and request == finale_request:
+		_finale_decided(decision)
+		return
 
 	_clear_ticket()
 
@@ -490,7 +505,9 @@ func shift_summary() -> Dictionary:
 		"flagged": tally["flagged"],
 		"strikes_left": GameState.strikes_remaining(),
 		"clock_out": clock_text(),
-		"run_over": GameState.run_over or GameState.is_final_shift() 			or (GameState.demo and shift >= GameState.DEMO_LAST_SHIFT),
+		"run_over": GameState.run_over or GameState.is_final_shift()
+			or (GameState.demo and shift >= GameState.DEMO_LAST_SHIFT),
+		"finale": GameState.finale_outcome,
 	}
 
 func _on_report_continue() -> void:
@@ -499,7 +516,10 @@ func _on_report_continue() -> void:
 	runner.close_out()
 	if GameState.run_over:
 		PlaytestLog.end_run(GameState.ending_name(GameState.ending))
-		report.show_ending(GameState.ending, Dean.ending_lines(GameState.ending))
+		var lines := Dean.ending_lines(GameState.ending)
+		if GameState.finale_outcome != Finale.Outcome.NONE:
+			lines = Finale.ending_lines(GameState.finale_outcome)
+		report.show_ending(GameState.ending, lines)
 		return
 	if GameState.demo_finished():
 		PlaytestLog.end_run("Demo complete")
@@ -513,6 +533,138 @@ func _on_report_continue() -> void:
 func _on_new_run() -> void:
 	GameState.reset()
 	get_tree().change_scene_to_file(TITLE_SCENE)
+
+# --- The last night -------------------------------------------------------------
+# The fifth incident. The Dean orders a lockdown, and one more person gets past it.
+
+func _on_finale_started(lines: PackedStringArray) -> void:
+	PlaytestLog.event("finale")
+	if desk.is_seated:
+		desk.stand()
+	viewer.visible = false
+	terminal.dismiss()
+	hud.visible = true
+	status_bar.set_lockdown(true)
+	if visitors_enabled:
+		stage.clear_waiting()
+		stage.dean_arrives()
+	dialogue.play_sequence(Dean.NAME, lines)
+	_run_lockdown()
+
+func _run_lockdown() -> void:
+	await get_tree().create_timer(1.0).timeout
+	while dialogue.is_busy():
+		await get_tree().create_timer(0.25).timeout
+	if not is_inside_tree():
+		return
+	if visitors_enabled:
+		stage.dean_leaves()
+	# Security prop every room open while they search it.
+	for door_name in ["DoorStorage", "DoorMeetingRoom"]:
+		var door := get_node_or_null("Doors/" + door_name) as Door
+		if door:
+			door.unlock()
+			door._set_open(true, false)
+	await get_tree().create_timer(6.0).timeout
+	if not is_inside_tree():
+		return
+	entrance.locked = true
+	_play_at(entrance, audio.door_locked if audio else null)
+	# The building goes quiet.
+	if room_tone:
+		create_tween().tween_property(room_tone, "volume_db", -28.0, 3.0)
+	await get_tree().create_timer(9.0).timeout
+	if is_inside_tree():
+		_finale_arrives()
+
+## Nobody saw them come in, and the doors are locked.
+func _finale_arrives() -> void:
+	finale_request = Finale.build_request(rulebook, queue_seed + 7 if queue_seed != 0 else randi())
+	records.add_record(finale_request.id_number, Finale.record_lines(finale_request))
+	_refresh_collection()
+	_update_stamp_lock(finale_request)
+	if visitors_enabled:
+		finale_figure = stage.appear_without_entering(finale_request)
+		finale_figure.walk_speed = Finale.WALK_SPEED
+	PlaytestLog.event("finale_visitor")
+	var request := finale_request
+	await get_tree().create_timer(Finale.PATIENCE_SECONDS).timeout
+	# Left waiting long enough, they stop waiting.
+	if finale_request == request and not radio.is_calling:
+		_finale_walk()
+
+## Stamped or refused, they go anyway. The radio is still on the desk.
+func _finale_decided(decision: Decision) -> void:
+	if decision == Decision.FLAG:
+		_finale_settle(Finale.Outcome.STOPPED)
+		return
+	stamp.load_document(null)
+	slip.load_document(null)
+	dialogue.play_sequence(finale_request.visitor_name, PackedStringArray([Finale.LEAVING]))
+	await get_tree().create_timer(2.5).timeout
+	_finale_walk()
+
+## They hear you pick up the radio, and they don't wait to see who answers.
+func _finale_heard_the_radio() -> void:
+	if finale_figure and not _finale_walking:
+		finale_figure.perform(DialogueLine.Delivery.CHECKS_EXIT, 0.0, 1.5, stage.exit_point())
+	await get_tree().create_timer(Finale.NERVE_SECONDS).timeout
+	_finale_walk()
+
+func _finale_walk() -> void:
+	if _finale_walking or finale_outcome != Finale.Outcome.NONE or finale_request == null:
+		return
+	_finale_walking = true
+	PlaytestLog.event("finale_walk")
+	if not visitors_enabled or not is_instance_valid(finale_figure):
+		# With nobody on stage the walk is only time.
+		await get_tree().create_timer(12.0).timeout
+		_finale_settle(Finale.Outcome.REACHED)
+		return
+	stage.at_counter = null
+	stage.at_counter_request = null
+	finale_figure.walk(stage.meeting_room_route(), func() -> void:
+		_finale_settle(Finale.Outcome.REACHED))
+
+func _finale_settle(outcome: Finale.Outcome) -> void:
+	if finale_outcome != Finale.Outcome.NONE:
+		return
+	finale_outcome = outcome
+	GameState.finale_outcome = outcome
+	PlaytestLog.event("finale_" + Finale.outcome_name(outcome).to_lower())
+	radio.abort()
+	if desk.is_seated:
+		desk.stand()
+	viewer.visible = false
+	terminal.dismiss()
+	if outcome == Finale.Outcome.STOPPED and visitors_enabled and is_instance_valid(finale_figure):
+		# Security have keys.
+		entrance.locked = false
+		stage.escort_from(finale_figure)
+	elif outcome == Finale.Outcome.REACHED:
+		var door := get_node_or_null("Doors/DoorMeetingRoom") as Door
+		if door:
+			door._set_open(false, false)
+	await get_tree().create_timer(3.0).timeout
+	if not is_inside_tree():
+		return
+	_play_at(radio, audio.radio_done if audio else null)
+	dialogue.play_sequence(Dean.NAME, Finale.radio_lines(outcome, GameState.player_name))
+	await get_tree().create_timer(1.0).timeout
+	while dialogue.is_busy():
+		await get_tree().create_timer(0.25).timeout
+	finale_request = null
+	_clear_ticket()
+	runner.end_finale()
+
+func _play_at(node: Node3D, stream: AudioStream) -> void:
+	if stream == null or node == null:
+		return
+	var player3d := AudioStreamPlayer3D.new()
+	player3d.stream = stream
+	node.add_child(player3d)
+	player3d.play()
+	player3d.finished.connect(player3d.queue_free)
 
 # --- Doors --------------------------------------------------------------------
 

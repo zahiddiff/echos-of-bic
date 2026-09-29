@@ -35,6 +35,8 @@ var false_flags: int = 0
 var incidents: Array[ThreatType.Kind] = []
 var run_over: bool = false
 var ending: Ending = Ending.STANDARD
+## How the lockdown went, if the run got that far: a Finale.Outcome.
+var finale_outcome: int = 0
 
 func _ready() -> void:
 	demo = OS.has_feature("demo") or OS.get_cmdline_user_args().has("--demo")
@@ -141,3 +143,4 @@ func reset() -> void:
 	incidents.clear()
 	run_over = false
 	ending = Ending.STANDARD
+	finale_outcome = 0

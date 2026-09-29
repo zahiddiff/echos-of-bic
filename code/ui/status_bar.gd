@@ -58,10 +58,21 @@ func set_shift(shift: int, training: bool, demo: bool = false) -> void:
 	if demo:
 		_shift_label.text += "  ·  DEMO"
 
+var _lockdown := false
+
+func set_lockdown(on: bool) -> void:
+	_lockdown = on
+	if on:
+		_shift_label.text = "LOCKDOWN"
+		_shift_label.add_theme_color_override("font_color", UiKit.DANGER)
+		_queue_label.text = "Doors locked"
+
 func set_clock(text: String) -> void:
 	_clock_label.text = text
 
 func set_waiting(count: int) -> void:
+	if _lockdown:
+		return
 	if count <= 0:
 		_queue_label.text = "Queue empty"
 	else:

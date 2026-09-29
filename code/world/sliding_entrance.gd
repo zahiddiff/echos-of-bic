@@ -22,6 +22,12 @@ signal opened()
 signal closed()
 
 var is_open: bool = false
+## Lockdown: the sensor is ignored and the doors stay shut.
+var locked: bool = false:
+	set(value):
+		locked = value
+		if locked and is_open:
+			_set_open(false)
 
 var _left_closed_z: float = 0.0
 var _right_closed_z: float = 0.0
@@ -49,7 +55,7 @@ func _ready() -> void:
 func _on_body_entered(_body: Node3D) -> void:
 	_occupants += 1
 	close_timer.stop()
-	if not is_open:
+	if not is_open and not locked:
 		_set_open(true)
 
 func _on_body_exited(_body: Node3D) -> void:

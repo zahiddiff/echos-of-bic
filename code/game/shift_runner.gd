@@ -16,6 +16,8 @@ signal sent_home(lines: PackedStringArray)
 signal mentor_line(lines: PackedStringArray)
 ## A rulebook rule has just been explained for the first time.
 signal rule_taught(rule: Rulebook.Rule, title: String)
+## The fifth incident: the Dean orders a lockdown instead of just firing the player.
+signal finale_started(lines: PackedStringArray)
 
 enum EndReason {
 	QUEUE_FINISHED,  ## the night ran out of visitors, which is the good case
@@ -31,6 +33,8 @@ var rulebook := Rulebook.new()
 var queue: Array[VisitorRequest] = []
 var index: int = 0
 var shift_over: bool = false
+## The lockdown is running; the queue is closed.
+var in_finale: bool = false
 
 var _pending_incidents: Array = []
 var _served: int = 0
@@ -61,6 +65,7 @@ func start(shift: int, seed_value: int = 0) -> void:
 	_served = 0
 	_pending_incidents.clear()
 	shift_over = false
+	in_finale = false
 	_warned_about_false_flags = false
 
 	shift_started.emit(shift, queue.size())
@@ -72,7 +77,7 @@ func start(shift: int, seed_value: int = 0) -> void:
 		_announce_visitor(0)
 
 func current() -> VisitorRequest:
-	if shift_over or index >= queue.size():
+	if shift_over or in_finale or index >= queue.size():
 		return null
 	return queue[index]
 
@@ -169,8 +174,20 @@ func _run_incident(request: VisitorRequest) -> void:
 	GameState.record_incident(request.threat_kind)
 	GameState.take_strike()
 	var strike_number := GameState.strikes_taken
-	dean_arrived.emit(Dean.arrival_lines(strike_number, GameState.player_name), strike_number)
 
+	# The last incident a run can have is the lockdown, when something is there to play it.
+	if strike_number >= GameState.MAX_STRIKES and ThreatType.is_designed(ThreatType.Kind.FINALE) \
+			and not finale_started.get_connections().is_empty():
+		in_finale = true
+		finale_started.emit(Finale.lockdown_lines(GameState.player_name))
+		return
+
+	dean_arrived.emit(Dean.arrival_lines(strike_number, GameState.player_name), strike_number)
+	_finish(EndReason.INCIDENT)
+
+## The lockdown has played out; the night is over.
+func end_finale() -> void:
+	in_finale = false
 	_finish(EndReason.INCIDENT)
 
 func _finish(reason: EndReason) -> void:

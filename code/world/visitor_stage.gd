@@ -16,6 +16,8 @@ var waiting_request: VisitorRequest
 
 var rahat: VisitorFigure
 var dean: VisitorFigure
+## Lockdown: nobody new comes in through the front.
+var queue_closed: bool = false
 
 ## Where the player stands behind the counter — what people turn to face.
 var player_point := Vector3(L.SEAT.x, 1.6, L.SEAT.z)
@@ -69,7 +71,7 @@ func call_forward(request: VisitorRequest, upcoming: VisitorRequest = null) -> v
 		get_tree().create_timer(2.5).timeout.connect(_admit_next.bind(upcoming))
 
 func _admit_next(request: VisitorRequest) -> void:
-	if waiting or request == at_counter_request:
+	if queue_closed or waiting or request == at_counter_request:
 		return
 	var figure := _spawn_outside(request)
 	waiting = figure
@@ -104,6 +106,57 @@ func escort_out() -> void:
 		get_tree().create_timer(1.2).timeout.connect(func() -> void:
 			_walk_out(figure)
 			get_tree().create_timer(0.6).timeout.connect(func() -> void: _walk_out(guard))))
+
+## Anyone waiting in the queue leaves, and nobody else is let in.
+func clear_waiting() -> void:
+	queue_closed = true
+	var figure := waiting
+	waiting = null
+	waiting_request = null
+	if figure:
+		_walk_out(figure)
+
+## The Dean goes back out the way he came.
+func dean_leaves() -> void:
+	if is_instance_valid(dean):
+		_walk_out(dean)
+		dean = null
+
+## Up the spine, through storage, into the meeting room: the dead end.
+func meeting_room_route() -> PackedVector3Array:
+	var x := L.doorway_centre_x()
+	return PackedVector3Array([
+		Vector3(x, 0.0, L.VISITOR_SPOT.z - 1.2),
+		Vector3(x, 0.0, L.Z_STORAGE_MAIN - 0.6),
+		Vector3(x, 0.0, L.Z_MEETING_STORAGE - 0.6),
+		Vector3(x - 1.3, 0.0, L.Z_MIN + 1.4),
+	])
+
+## Stop where they stand.
+func hold(figure: VisitorFigure) -> void:
+	if is_instance_valid(figure):
+		figure.walk(PackedVector3Array([figure.global_position]))
+
+## Security come in and take `figure` out, wherever they are.
+func escort_from(figure: VisitorFigure) -> VisitorFigure:
+	if not is_instance_valid(figure):
+		return null
+	if figure == at_counter:
+		at_counter = null
+		at_counter_request = null
+	hold(figure)
+	var guard := _make_guard()
+	add_child(guard)
+	guard.global_position = _outside()
+	guard.face(_threshold_out(), true)
+	var beside := figure.global_position + (Vector3(L.X_MAX, 0, figure.global_position.z) - figure.global_position).normalized() * 0.7
+	guard.walk(PackedVector3Array([_threshold_out(), _threshold_in(), beside]), func() -> void:
+		guard.face(figure.global_position)
+		figure.face(guard.global_position)
+		get_tree().create_timer(1.2).timeout.connect(func() -> void:
+			_walk_out(figure)
+			get_tree().create_timer(0.6).timeout.connect(func() -> void: _walk_out(guard))))
+	return guard
 
 ## Round the open end of the counter, onto the staff side.
 func staff_side_point() -> Vector3:

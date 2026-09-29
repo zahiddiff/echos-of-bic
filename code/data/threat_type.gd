@@ -70,8 +70,9 @@ static func cover_task_ids(kind: Kind) -> Array:
 static func probes_for(kind: Kind) -> Array:
 	return PROBES.get(kind, [])
 
-static func is_designed(kind: Kind) -> bool:
-	return kind != Kind.FINALE
+## Every kind is written now; the Finale lives in `Finale`.
+static func is_designed(_kind: Kind) -> bool:
+	return true
 
 ## Whether flagging was the right call.
 static func should_be_flagged(kind: Kind) -> bool:

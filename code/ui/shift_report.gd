@@ -67,6 +67,13 @@ func show_report(data: Dictionary) -> void:
 	if data.get("training", false) and reason == ShiftRunner.EndReason.QUEUE_FINISHED:
 		title = "Training shift complete"
 		line = "Rahat signs your sheet. From tomorrow the queue is yours."
+	match int(data.get("finale", Finale.Outcome.NONE)):
+		Finale.Outcome.STOPPED:
+			title = "Lockdown"
+			line = "You called it in. Security stopped them before they reached the meeting room."
+		Finale.Outcome.REACHED:
+			title = "Lockdown"
+			line = "They reached the meeting room before security reached them."
 	_body.add_child(UiKit.label(title, 28))
 	_body.add_child(UiKit.label(line, 15, UiKit.MUTED))
 	_body.add_child(_spacer(6))

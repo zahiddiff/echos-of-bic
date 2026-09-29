@@ -50,8 +50,8 @@ func _test_threat_catalogue() -> void:
 		"three threat types are shuffled into the queue")
 	_expect(not ThreatType.RANDOM_KINDS.has(ThreatType.Kind.FINALE),
 		"the Finale Threat is never in the random pool")
-	_expect(not ThreatType.is_designed(ThreatType.Kind.FINALE),
-		"the Finale Threat is flagged as not yet written")
+	_expect(ThreatType.is_designed(ThreatType.Kind.FINALE),
+		"the Finale Threat is written (the lockdown)")
 
 	for kind in ThreatType.RANDOM_KINDS:
 		var covers := ThreatType.cover_task_ids(kind)

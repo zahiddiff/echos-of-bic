@@ -39,6 +39,9 @@ func close() -> void:
 func load_records(records: Dictionary) -> void:
 	_records = records
 
+func add_record(number: String, lines: PackedStringArray) -> void:
+	_records[_normalise(number)] = lines
+
 func has_record(query: String) -> bool:
 	return _records.has(_normalise(query))
 
