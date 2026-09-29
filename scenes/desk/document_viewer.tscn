@@ -1,0 +1,375 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://code/desk/document_viewer.gd" id="1_viewer"]
+[ext_resource type="Script" path="res://code/desk/draggable_paper.gd" id="2_paper"]
+[ext_resource type="Script" path="res://code/desk/magnifier.gd" id="3_magnifier"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_paper"]
+bg_color = Color(0.91, 0.9, 0.86, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.66, 0.64, 0.59, 1)
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 12
+shadow_offset = Vector2(3, 5)
+content_margin_left = 26.0
+content_margin_top = 22.0
+content_margin_right = 26.0
+content_margin_bottom = 22.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
+bg_color = Color(0.84, 0.86, 0.88, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.58, 0.62, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 10
+shadow_offset = Vector2(3, 4)
+content_margin_left = 16.0
+content_margin_top = 14.0
+content_margin_right = 16.0
+content_margin_bottom = 14.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_visitor"]
+bg_color = Color(0.11, 0.12, 0.14, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.3, 0.31, 0.34, 1)
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_rim"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.16, 0.17, 0.19, 1)
+corner_radius_top_left = 82
+corner_radius_top_right = 82
+corner_radius_bottom_right = 82
+corner_radius_bottom_left = 82
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_handle"]
+bg_color = Color(0.2, 0.18, 0.16, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
+[node name="DocumentViewer" type="CanvasLayer"]
+layer = 2
+script = ExtResource("1_viewer")
+
+[node name="Dim" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.02, 0.02, 0.03, 0.38)
+
+[node name="Surface" type="Control" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="RequestForm" type="PanelContainer" parent="Surface"]
+offset_left = 120.0
+offset_top = 70.0
+offset_right = 540.0
+offset_bottom = 560.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_paper")
+script = ExtResource("2_paper")
+lift_tilt = 1.2
+
+[node name="Sheet" type="VBoxContainer" parent="Surface/RequestForm"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="Surface/RequestForm/Sheet"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.28, 0.26, 0.23, 1)
+theme_override_font_sizes/font_size = 12
+text = "BIC — INTERNATIONAL STUDENT HELP DESK"
+
+[node name="Title" type="Label" parent="Surface/RequestForm/Sheet"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.12, 0.11, 0.1, 1)
+theme_override_font_sizes/font_size = 22
+text = "Request form"
+
+[node name="Rule" type="ColorRect" parent="Surface/RequestForm/Sheet"]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+color = Color(0.6, 0.58, 0.53, 1)
+
+[node name="Rows" type="VBoxContainer" parent="Surface/RequestForm/Sheet"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="RowTask" type="VBoxContainer" parent="Surface/RequestForm/Sheet/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Key" type="Label" parent="Surface/RequestForm/Sheet/Rows/RowTask"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.4, 0.36, 1)
+theme_override_font_sizes/font_size = 12
+text = "REQUEST TYPE"
+
+[node name="Value" type="Label" parent="Surface/RequestForm/Sheet/Rows/RowTask"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.1, 0.09, 0.08, 1)
+theme_override_font_sizes/font_size = 19
+text = "—"
+autowrap_mode = 3
+
+[node name="RowName" type="VBoxContainer" parent="Surface/RequestForm/Sheet/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Key" type="Label" parent="Surface/RequestForm/Sheet/Rows/RowName"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.4, 0.36, 1)
+theme_override_font_sizes/font_size = 12
+text = "NAME"
+
+[node name="Value" type="Label" parent="Surface/RequestForm/Sheet/Rows/RowName"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.1, 0.09, 0.08, 1)
+theme_override_font_sizes/font_size = 19
+text = "—"
+
+[node name="RowCollege" type="VBoxContainer" parent="Surface/RequestForm/Sheet/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Key" type="Label" parent="Surface/RequestForm/Sheet/Rows/RowCollege"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.4, 0.36, 1)
+theme_override_font_sizes/font_size = 12
+text = "COLLEGE CODE"
+
+[node name="Value" type="Label" parent="Surface/RequestForm/Sheet/Rows/RowCollege"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.1, 0.09, 0.08, 1)
+theme_override_font_sizes/font_size = 19
+text = "—"
+
+[node name="RowIssued" type="VBoxContainer" parent="Surface/RequestForm/Sheet/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Key" type="Label" parent="Surface/RequestForm/Sheet/Rows/RowIssued"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.4, 0.36, 1)
+theme_override_font_sizes/font_size = 12
+text = "DATE OF ISSUE"
+
+[node name="Value" type="Label" parent="Surface/RequestForm/Sheet/Rows/RowIssued"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.1, 0.09, 0.08, 1)
+theme_override_font_sizes/font_size = 19
+text = "—"
+
+[node name="RowWindow" type="VBoxContainer" parent="Surface/RequestForm/Sheet/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Key" type="Label" parent="Surface/RequestForm/Sheet/Rows/RowWindow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.4, 0.36, 1)
+theme_override_font_sizes/font_size = 12
+text = "VALIDITY"
+
+[node name="Value" type="Label" parent="Surface/RequestForm/Sheet/Rows/RowWindow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.1, 0.09, 0.08, 1)
+theme_override_font_sizes/font_size = 19
+text = "—"
+
+[node name="RowStamp" type="VBoxContainer" parent="Surface/RequestForm/Sheet/Rows"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="Key" type="Label" parent="Surface/RequestForm/Sheet/Rows/RowStamp"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.4, 0.36, 1)
+theme_override_font_sizes/font_size = 12
+text = "PRIOR APPROVAL STAMP"
+
+[node name="Value" type="Label" parent="Surface/RequestForm/Sheet/Rows/RowStamp"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.1, 0.09, 0.08, 1)
+theme_override_font_sizes/font_size = 19
+text = "—"
+
+[node name="IdCard" type="PanelContainer" parent="Surface"]
+offset_left = 620.0
+offset_top = 360.0
+offset_right = 1000.0
+offset_bottom = 550.0
+rotation = 0.0349066
+theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+script = ExtResource("2_paper")
+lift_tilt = -1.8
+
+[node name="Card" type="HBoxContainer" parent="Surface/IdCard"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Photo" type="TextureRect" parent="Surface/IdCard/Card"]
+custom_minimum_size = Vector2(120, 150)
+layout_mode = 2
+size_flags_vertical = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Details" type="VBoxContainer" parent="Surface/IdCard/Card"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="CardHeader" type="Label" parent="Surface/IdCard/Card/Details"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.33, 0.37, 1)
+theme_override_font_sizes/font_size = 11
+text = "STUDENT IDENTIFICATION"
+
+[node name="CardName" type="Label" parent="Surface/IdCard/Card/Details"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.09, 0.11, 1)
+theme_override_font_sizes/font_size = 20
+text = "—"
+autowrap_mode = 3
+
+[node name="CardRule" type="ColorRect" parent="Surface/IdCard/Card/Details"]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+color = Color(0.55, 0.58, 0.62, 1)
+
+[node name="CardNumberKey" type="Label" parent="Surface/IdCard/Card/Details"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.36, 0.39, 0.43, 1)
+theme_override_font_sizes/font_size = 11
+text = "ID NUMBER"
+
+[node name="CardNumber" type="Label" parent="Surface/IdCard/Card/Details"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.08, 0.09, 0.11, 1)
+theme_override_font_sizes/font_size = 18
+text = "—"
+
+[node name="VisitorPanel" type="PanelContainer" parent="Surface"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -320.0
+offset_top = 60.0
+offset_right = -40.0
+offset_bottom = 400.0
+grow_horizontal = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_visitor")
+
+[node name="Column" type="VBoxContainer" parent="Surface/VisitorPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="Surface/VisitorPanel/Column"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.6, 0.63, 1)
+theme_override_font_sizes/font_size = 11
+text = "AT THE DESK"
+
+[node name="Photo" type="TextureRect" parent="Surface/VisitorPanel/Column"]
+custom_minimum_size = Vector2(0, 240)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Caption" type="Label" parent="Surface/VisitorPanel/Column"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.85, 0.82, 1)
+theme_override_font_sizes/font_size = 15
+text = "—"
+
+[node name="Magnifier" type="Control" parent="Surface"]
+offset_left = 560.0
+offset_top = 110.0
+offset_right = 724.0
+offset_bottom = 274.0
+script = ExtResource("3_magnifier")
+
+[node name="Clip" type="Control" parent="Surface/Magnifier"]
+clip_contents = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Lens" type="TextureRect" parent="Surface/Magnifier/Clip"]
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Rim" type="Panel" parent="Surface/Magnifier"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_rim")
+
+[node name="Handle" type="Panel" parent="Surface/Magnifier"]
+anchors_preset = 3
+anchor_left = 0.0
+anchor_top = 1.0
+anchor_right = 0.0
+anchor_bottom = 1.0
+offset_left = 14.0
+offset_top = -18.0
+offset_right = 30.0
+offset_bottom = 72.0
+grow_vertical = 0
+rotation = -0.6
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_handle")
+
+[node name="Hint" type="Label" parent="."]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -500.0
+offset_top = -46.0
+offset_right = 500.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.72, 0.73, 0.75, 1)
+theme_override_font_sizes/font_size = 14
+text = "Drag the papers  ·  Drag the magnifier over a photo  ·  Esc to step back"
+horizontal_alignment = 1

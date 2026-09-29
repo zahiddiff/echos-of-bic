@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="AudioCues" load_steps=18 format=3]
+
+[ext_resource type="Script" path="res://code/game/audio_cues.gd" id="1_cues"]
+[ext_resource type="AudioStream" path="res://assets/audio/entrance_chime.wav" id="2_entrance_chime"]
+[ext_resource type="AudioStream" path="res://assets/audio/entrance_whoosh.wav" id="3_entrance_whoosh"]
+[ext_resource type="AudioStream" path="res://assets/audio/door_open.wav" id="4_door_open"]
+[ext_resource type="AudioStream" path="res://assets/audio/door_locked.wav" id="5_door_locked"]
+[ext_resource type="AudioStream" path="res://assets/audio/room_tone.wav" id="6_room_tone"]
+[ext_resource type="AudioStream" path="res://assets/audio/room_tone_late.wav" id="7_room_tone_late"]
+[ext_resource type="AudioStream" path="res://assets/audio/fluorescent_buzz.wav" id="8_fluorescent_buzz"]
+[ext_resource type="AudioStream" path="res://assets/audio/stamp.wav" id="9_stamp"]
+[ext_resource type="AudioStream" path="res://assets/audio/rejection_slip.wav" id="10_rejection_slip"]
+[ext_resource type="AudioStream" path="res://assets/audio/paper_pickup.wav" id="11_paper_pickup"]
+[ext_resource type="AudioStream" path="res://assets/audio/paper_drop.wav" id="12_paper_drop"]
+[ext_resource type="AudioStream" path="res://assets/audio/terminal_key.wav" id="13_terminal_key"]
+[ext_resource type="AudioStream" path="res://assets/audio/terminal_error.wav" id="14_terminal_error"]
+[ext_resource type="AudioStream" path="res://assets/audio/radio_pickup.wav" id="15_radio_pickup"]
+[ext_resource type="AudioStream" path="res://assets/audio/radio_static.wav" id="16_radio_static"]
+[ext_resource type="AudioStream" path="res://assets/audio/radio_done.wav" id="17_radio_done"]
+
+[resource]
+script = ExtResource("1_cues")
+entrance_chime = ExtResource("2_entrance_chime")
+entrance_whoosh = ExtResource("3_entrance_whoosh")
+door_open = ExtResource("4_door_open")
+door_locked = ExtResource("5_door_locked")
+room_tone = ExtResource("6_room_tone")
+room_tone_late = ExtResource("7_room_tone_late")
+fluorescent_buzz = ExtResource("8_fluorescent_buzz")
+stamp = ExtResource("9_stamp")
+rejection_slip = ExtResource("10_rejection_slip")
+paper_pickup = ExtResource("11_paper_pickup")
+paper_drop = ExtResource("12_paper_drop")
+terminal_key = ExtResource("13_terminal_key")
+terminal_error = ExtResource("14_terminal_error")
+radio_pickup = ExtResource("15_radio_pickup")
+radio_static = ExtResource("16_radio_static")
+radio_done = ExtResource("17_radio_done")

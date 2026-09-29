@@ -1,0 +1,75 @@
+name: Build and publish
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: 4.7.2
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot
+            ~/.local/share/godot/export_templates
+          key: godot-${{ env.GODOT_VERSION }}-web
+
+      - name: Install Godot and web templates
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          base=https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable
+          mkdir -p ~/godot
+          curl -fsSL -o /tmp/godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q /tmp/godot.zip -d ~/godot
+          mv ~/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64 ~/godot/godot
+          curl -fsSL -o /tmp/templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q /tmp/templates.tpz -d /tmp/tpl
+          dest=~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          mkdir -p "$dest"
+          mv /tmp/tpl/templates/* "$dest/"
+          find "$dest" -type f ! -name 'web_*' ! -name 'version.txt' -delete
+
+      - name: Import
+        run: ~/godot/godot --headless --path . --import
+
+      - name: Test
+        run: bash tools/run_tests.sh ~/godot/godot
+
+      - name: Export
+        run: |
+          mkdir -p build/web
+          ~/godot/godot --headless --path . --export-release "Web" build/web/index.html
+          test -s build/web/index.html
+          ls -la build/web
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

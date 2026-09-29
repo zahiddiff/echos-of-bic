@@ -1,0 +1,68 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://code/desk/dialogue_view.gd" id="1_dialogue"]
+
+[node name="DialogueView" type="CanvasLayer"]
+layer = 4
+script = ExtResource("1_dialogue")
+
+[node name="Speaker" type="Label" parent="."]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -520.0
+offset_top = -160.0
+offset_right = 520.0
+offset_bottom = -136.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.66, 0.64, 0.6, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.85)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_font_sizes/font_size = 14
+text = ""
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="."]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -520.0
+offset_top = -132.0
+offset_right = 520.0
+offset_bottom = -60.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.96, 0.95, 0.92, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.9)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 21
+text = ""
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Questions" type="VBoxContainer" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -400.0
+offset_top = -250.0
+offset_right = -40.0
+offset_bottom = -180.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_constants/separation = 6
+alignment = 2
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]

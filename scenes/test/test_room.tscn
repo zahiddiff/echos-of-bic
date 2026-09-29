@@ -1,0 +1,226 @@
+[gd_scene load_steps=28 format=3]
+
+[ext_resource type="Script" path="res://code/test/test_room.gd" id="1_test_room"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://scenes/ui/interact_hud.tscn" id="3_hud"]
+[ext_resource type="Material" path="res://assets/materials/graybox_floor.tres" id="4_mat_floor"]
+[ext_resource type="Material" path="res://assets/materials/graybox_wall.tres" id="5_mat_wall"]
+[ext_resource type="Material" path="res://assets/materials/graybox_prop.tres" id="6_mat_prop"]
+[ext_resource type="Material" path="res://assets/materials/graybox_bulb.tres" id="7_mat_bulb"]
+[ext_resource type="Script" path="res://code/test/test_lamp.gd" id="8_test_lamp"]
+[ext_resource type="Script" path="res://code/examples/stamp_action.gd" id="9_stamp_action"]
+[ext_resource type="Script" path="res://code/interactable.gd" id="10_interactable"]
+
+[sub_resource type="Environment" id="Environment_room"]
+background_mode = 1
+background_color = Color(0.04, 0.042, 0.05, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.4, 0.42, 0.46, 1)
+ambient_light_energy = 0.45
+tonemap_mode = 2
+
+[sub_resource type="BoxMesh" id="BoxMesh_slab"]
+size = Vector3(8, 0.2, 6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_slab"]
+size = Vector3(8, 0.2, 6)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall_ns"]
+size = Vector3(8, 3, 0.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall_ns"]
+size = Vector3(8, 3, 0.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall_ew"]
+size = Vector3(0.2, 3, 6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall_ew"]
+size = Vector3(0.2, 3, 6)
+
+[sub_resource type="BoxMesh" id="BoxMesh_desk"]
+size = Vector3(1.8, 0.75, 0.8)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_desk"]
+size = Vector3(1.8, 0.75, 0.8)
+
+[sub_resource type="BoxMesh" id="BoxMesh_lamp_base"]
+size = Vector3(0.18, 0.06, 0.18)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_lamp"]
+size = Vector3(0.22, 0.42, 0.22)
+
+[sub_resource type="SphereMesh" id="SphereMesh_bulb"]
+radius = 0.07
+height = 0.14
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_lamp_stem"]
+top_radius = 0.015
+bottom_radius = 0.015
+height = 0.22
+
+[sub_resource type="BoxMesh" id="BoxMesh_stamp"]
+size = Vector3(0.12, 0.16, 0.12)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_stamp"]
+size = Vector3(0.14, 0.18, 0.14)
+
+[sub_resource type="BoxMesh" id="BoxMesh_cabinet"]
+size = Vector3(0.9, 1, 0.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_cabinet"]
+size = Vector3(0.9, 1, 0.5)
+
+[node name="TestRoom" type="Node3D"]
+script = ExtResource("1_test_room")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_room")
+
+[node name="Room" type="Node3D" parent="."]
+
+[node name="Floor" type="StaticBody3D" parent="Room"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Room/Floor"]
+mesh = SubResource("BoxMesh_slab")
+surface_material_override/0 = ExtResource("4_mat_floor")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Room/Floor"]
+shape = SubResource("BoxShape3D_slab")
+
+[node name="Ceiling" type="StaticBody3D" parent="Room"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.1, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Room/Ceiling"]
+mesh = SubResource("BoxMesh_slab")
+surface_material_override/0 = ExtResource("5_mat_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Room/Ceiling"]
+shape = SubResource("BoxShape3D_slab")
+
+[node name="WallNorth" type="StaticBody3D" parent="Room"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -3.1)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Room/WallNorth"]
+mesh = SubResource("BoxMesh_wall_ns")
+surface_material_override/0 = ExtResource("5_mat_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Room/WallNorth"]
+shape = SubResource("BoxShape3D_wall_ns")
+
+[node name="WallSouth" type="StaticBody3D" parent="Room"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 3.1)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Room/WallSouth"]
+mesh = SubResource("BoxMesh_wall_ns")
+surface_material_override/0 = ExtResource("5_mat_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Room/WallSouth"]
+shape = SubResource("BoxShape3D_wall_ns")
+
+[node name="WallWest" type="StaticBody3D" parent="Room"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.1, 1.5, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Room/WallWest"]
+mesh = SubResource("BoxMesh_wall_ew")
+surface_material_override/0 = ExtResource("5_mat_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Room/WallWest"]
+shape = SubResource("BoxShape3D_wall_ew")
+
+[node name="WallEast" type="StaticBody3D" parent="Room"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.1, 1.5, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Room/WallEast"]
+mesh = SubResource("BoxMesh_wall_ew")
+surface_material_override/0 = ExtResource("5_mat_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Room/WallEast"]
+shape = SubResource("BoxShape3D_wall_ew")
+
+[node name="CeilingLight" type="OmniLight3D" parent="Room"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.75, 0)
+light_color = Color(0.86, 0.9, 0.95, 1)
+light_energy = 1.6
+omni_range = 14.0
+
+[node name="Desk" type="StaticBody3D" parent="Room"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.375, -1.8)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Room/Desk"]
+mesh = SubResource("BoxMesh_desk")
+surface_material_override/0 = ExtResource("6_mat_prop")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Room/Desk"]
+shape = SubResource("BoxShape3D_desk")
+
+[node name="DeskLamp" type="StaticBody3D" parent="Room/Desk"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6, 0.375, 0)
+script = ExtResource("8_test_lamp")
+prompt_text = "Turn on the lamp"
+on_prompt = "Turn off the lamp"
+off_prompt = "Turn on the lamp"
+starts_on = false
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Room/Desk/DeskLamp"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.03, 0)
+mesh = SubResource("BoxMesh_lamp_base")
+surface_material_override/0 = ExtResource("6_mat_prop")
+
+[node name="Stem" type="MeshInstance3D" parent="Room/Desk/DeskLamp"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.17, 0)
+mesh = SubResource("CylinderMesh_lamp_stem")
+surface_material_override/0 = ExtResource("6_mat_prop")
+
+[node name="Bulb" type="MeshInstance3D" parent="Room/Desk/DeskLamp"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.33, 0)
+mesh = SubResource("SphereMesh_bulb")
+surface_material_override/0 = ExtResource("7_mat_bulb")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="Room/Desk/DeskLamp"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.33, 0)
+visible = false
+light_color = Color(1, 0.89, 0.7, 1)
+light_energy = 1.0
+omni_range = 3.2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Room/Desk/DeskLamp"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.21, 0)
+shape = SubResource("BoxShape3D_lamp")
+
+[node name="ApprovalStamp" type="StaticBody3D" parent="Room/Desk"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.375, 0)
+script = ExtResource("9_stamp_action")
+prompt_text = "Stamp APPROVED"
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Room/Desk/ApprovalStamp"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0)
+mesh = SubResource("BoxMesh_stamp")
+surface_material_override/0 = ExtResource("6_mat_prop")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Room/Desk/ApprovalStamp"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.09, 0)
+shape = SubResource("BoxShape3D_stamp")
+
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="Room/Desk/ApprovalStamp"]
+
+[node name="LockedCabinet" type="StaticBody3D" parent="Room"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.9, 0, -2.5)
+script = ExtResource("10_interactable")
+prompt_text = "Open the cabinet"
+locked = true
+locked_prompt_text = "Locked — no key"
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Room/LockedCabinet"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+mesh = SubResource("BoxMesh_cabinet")
+surface_material_override/0 = ExtResource("6_mat_prop")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Room/LockedCabinet"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+shape = SubResource("BoxShape3D_cabinet")
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 1.2)
+
+[node name="InteractHUD" parent="." instance=ExtResource("3_hud")]

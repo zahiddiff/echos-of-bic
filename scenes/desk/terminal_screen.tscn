@@ -1,0 +1,103 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://code/desk/terminal_screen.gd" id="1_terminal"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bezel"]
+bg_color = Color(0.13, 0.13, 0.12, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.06, 0.06, 0.06, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 22.0
+content_margin_top = 20.0
+content_margin_right = 22.0
+content_margin_bottom = 18.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_entry"]
+bg_color = Color(0.04, 0.05, 0.04, 1)
+border_width_top = 1
+border_color = Color(0.35, 0.26, 0.09, 1)
+content_margin_left = 6.0
+content_margin_top = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
+
+[node name="TerminalScreen" type="CanvasLayer"]
+layer = 3
+script = ExtResource("1_terminal")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.01, 0.01, 0.01, 0.82)
+
+[node name="Frame" type="CenterContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Screen" type="PanelContainer" parent="Frame"]
+custom_minimum_size = Vector2(620, 420)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bezel")
+
+[node name="Column" type="VBoxContainer" parent="Frame/Screen"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Output" type="Label" parent="Frame/Screen/Column"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.92, 0.68, 0.2, 1)
+theme_override_font_sizes/font_size = 16
+text = "BIC STUDENT RECORDS  v2.1   (c) 1998"
+vertical_alignment = 0
+
+[node name="Status" type="Label" parent="Frame/Screen/Column"]
+layout_mode = 2
+size_flags_vertical = 8
+theme_override_colors/font_color = Color(0.55, 0.42, 0.16, 1)
+theme_override_font_sizes/font_size = 13
+text = "READY"
+
+[node name="Entry" type="LineEdit" parent="Frame/Screen/Column"]
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+size_flags_vertical = 8
+theme_override_colors/font_color = Color(0.94, 0.72, 0.26, 1)
+theme_override_colors/caret_color = Color(0.94, 0.72, 0.26, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_entry")
+theme_override_styles/focus = SubResource("StyleBoxFlat_entry")
+placeholder_text = "BIC-__-______"
+caret_blink = true
+
+[node name="Hint" type="Label" parent="."]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -400.0
+offset_top = -44.0
+offset_right = 400.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.6, 0.6, 0.62, 1)
+theme_override_font_sizes/font_size = 13
+text = "Type a student number and press Return  ·  Esc to look away"
+horizontal_alignment = 1
